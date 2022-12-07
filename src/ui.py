@@ -5,7 +5,7 @@ from __feature__ import true_property
 
 
 class MainWindow(QtWidgets.QMainWindow):
-    """..."""
+    """App window instance."""
     def __init__(self, *args, **kwargs):
-        """..."""
+        """Class constructor."""
         super().__init__(*args, **kwargs)

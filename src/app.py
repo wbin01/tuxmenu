@@ -10,40 +10,40 @@ import ui
 
 
 class TuxMenu(object):
-    """..."""
+    """Desktop menu for Linux written in Python and Qt."""
     def __init__(self):
-        """..."""
+        """Class constructor."""
         self.__app_window = QtWidgets.QApplication(sys.argv)
         self.__app_icon = 'tuxmenu.png'
-        self.__app_id = 'tuxmenu'
         self.__app_name = 'TuxMenu'
         self.__app_ui = ui.MainWindow()
 
     @property
-    def app_window(self):
+    def app(self) -> QtWidgets.QApplication:
+        """App instance (QApplication)."""
         return self.__app_window
 
     @property
-    def app_icon(self):
+    def app_icon(self) -> str:
+        """App icon path."""
         return self.__app_icon
 
     @property
-    def app_id(self):
-        return self.__app_id
-
-    @property
-    def app_name(self):
+    def app_name(self) -> str:
+        """App name."""
         return self.__app_name
 
     @property
-    def app_ui(self):
+    def app_ui(self) -> QtWidgets.QMainWindow:
+        """App window instance."""
         return self.__app_ui
 
-    def on_quit(self):
-        self.app_window.quit()
+    def on_quit(self) -> None:
+        """Close the app."""
+        self.app.quit()
 
     def main(self) -> None:
-        """..."""
+        """Start the app."""
         # Name
         self.app_ui.window_title = self.app_name
 
@@ -61,4 +61,4 @@ class TuxMenu(object):
 
         # Show
         self.app_ui.show()
-        sys.exit(self.app_window.exec())
+        sys.exit(self.app.exec())
