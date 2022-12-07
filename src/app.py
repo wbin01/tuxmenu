@@ -14,7 +14,7 @@ class TuxMenu(object):
     def __init__(self):
         """..."""
         self.__app = QtWidgets.QApplication([])
-        self.__app_id = 'xcellapp'
+        self.__app_id = 'tuxmenu'
         self.__app_name = 'TuxMenu'
         self.__app_ui = ui.MainWindow()
 
