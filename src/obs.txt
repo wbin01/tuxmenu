@@ -1,0 +1,6 @@
+--- Packages
+    python -m pip install pyside6
+    python -m pip install BlurWindow
+    python -m pip install pyxdg
+
+Window icon when build

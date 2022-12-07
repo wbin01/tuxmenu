@@ -1,6 +1,7 @@
 #!/usr/bin env python3
-# from BlurWindow.blurWindow import GlobalBlur
-from PySide6 import QtWidgets
+from PySide6 import QtCore, QtWidgets
+from __feature__ import snake_case
+from __feature__ import true_property
 
 
 class MainWindow(QtWidgets.QMainWindow):
