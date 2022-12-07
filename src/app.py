@@ -60,5 +60,5 @@ class TuxMenu(object):
         GlobalBlur(self.app_ui.win_id(), Dark=True, QWidget=self)
 
         # Show
-        self.app_ui.show()
+        self.app_ui.show_maximized()  # .show_full_screen() .show()
         sys.exit(self.app.exec())
