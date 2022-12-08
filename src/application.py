@@ -5,7 +5,35 @@ from BlurWindow.blurWindow import GlobalBlur
 from PySide6 import QtCore, QtGui, QtWidgets
 from __feature__ import snake_case
 
-import window
+import widgets
+import attachments
+
+
+class MainWindow(QtWidgets.QMainWindow):
+    """App window instance."""
+    def __init__(self, *args, **kwargs):
+        """Class constructor."""
+        super().__init__(*args, **kwargs)
+        # Main container
+        self.main_container = QtWidgets.QWidget()
+        self.main_container.set_contents_margins(0, 0, 0, 0)
+        self.set_central_widget(self.main_container)
+
+        # Main layout
+        self.layout_container = QtWidgets.QVBoxLayout()
+        self.layout_container.set_spacing(0)
+        self.main_container.set_layout(self.layout_container)
+
+        # App launcher
+        self.app_launcher_layout = QtWidgets.QVBoxLayout()
+        self.app_launcher_layout.set_spacing(0)
+        self.app_launcher_layout.set_alignment(QtCore.Qt.AlignCenter)
+        self.layout_container.add_layout(self.app_launcher_layout)
+
+        self.app_launcher = widgets.AppLauncher(
+            attachments.DesktopFile(
+                '/usr/share/applications/firefox.desktop'))
+        self.app_launcher_layout.add_widget(self.app_launcher)
 
 
 class Application(object):
@@ -15,7 +43,7 @@ class Application(object):
         self.application = QtWidgets.QApplication(args)
         self.application_icon = 'tuxmenu.png'
         self.application_name = 'TuxMenu'
-        self.application_window = window.MainWindow()
+        self.application_window = MainWindow()
 
     def on_quit(self) -> None:
         """Close the app."""
@@ -42,3 +70,8 @@ class Application(object):
         # Show
         self.application_window.show_maximized()  # .show_full_screen() .show()
         sys.exit(self.application.exec())
+
+
+if __name__ == '__main__':
+    app = Application(sys.argv)
+    app.main()

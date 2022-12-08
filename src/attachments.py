@@ -8,7 +8,7 @@ import re
 from subprocess import getoutput
 
 
-class FileLocations(object):
+class DesktopFileLocations(object):
     """Desktop files location object.
 
     Locate system desktop entry file paths.
