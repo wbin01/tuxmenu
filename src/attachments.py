@@ -197,39 +197,39 @@ class DesktopFile(object):
             self.__as_dict[escope_header] = escope_keys_and_values
 
     def __gt__(self, other) -> bool:
-        if '[Desktop Entry]' in self.__as_dict:
-            return self.__as_dict['[Desktop Entry]']['Name'] > other
-        return self.__url > other
+        if '[Desktop Entry]' in self.as_dict:
+            return self.as_dict['[Desktop Entry]']['Name'] > other
+        return self.url > other
 
     def __lt__(self, other) -> bool:
-        if '[Desktop Entry]' in self.__as_dict:
-            return self.__as_dict['[Desktop Entry]']['Name'] < other
-        return self.__url < other
+        if '[Desktop Entry]' in self.as_dict:
+            return self.as_dict['[Desktop Entry]']['Name'] < other
+        return self.url < other
 
     def __eq__(self, other) -> bool:
-        if '[Desktop Entry]' in self.__as_dict:
-            return self.__as_dict['[Desktop Entry]']['Name'] == other
-        return self.__url == other
+        if '[Desktop Entry]' in self.as_dict:
+            return self.as_dict['[Desktop Entry]']['Name'] == other
+        return self.url == other
 
     def __ge__(self, other) -> bool:
-        if '[Desktop Entry]' in self.__as_dict:
-            return self.__as_dict['[Desktop Entry]']['Name'] >= other
-        return self.__url >= other
+        if '[Desktop Entry]' in self.as_dict:
+            return self.as_dict['[Desktop Entry]']['Name'] >= other
+        return self.url >= other
 
     def __le__(self, other) -> bool:
-        if '[Desktop Entry]' in self.__as_dict:
-            return self.__as_dict['[Desktop Entry]']['Name'] <= other
-        return self.__url <= other
+        if '[Desktop Entry]' in self.as_dict:
+            return self.as_dict['[Desktop Entry]']['Name'] <= other
+        return self.url <= other
 
     def __ne__(self, other) -> bool:
-        if '[Desktop Entry]' in self.__as_dict:
-            return self.__as_dict['[Desktop Entry]']['Name'] != other
-        return self.__url != other
+        if '[Desktop Entry]' in self.as_dict:
+            return self.as_dict['[Desktop Entry]']['Name'] != other
+        return self.url != other
 
     def __str__(self) -> str:
-        if '[Desktop Entry]' in self.__as_dict:
+        if '[Desktop Entry]' in self.as_dict:
             return f'<DesktopFile: {self.as_dict["[Desktop Entry]"]["Name"]}>'
-        return f'<DesktopFile: {self.__url.split("/")[-1]}>'
+        return f'<DesktopFile: {self.url.split("/")[-1]}>'
 
 
 class MenuSchema(object):
