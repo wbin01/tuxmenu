@@ -12,22 +12,6 @@ import attachments
 import widgets
 
 
-class ThreadRun(QtCore.QRunnable):
-    """..."""
-    def __init__(self, fn, *args, **kwargs):
-        """Class constructor."""
-        super().__init__()
-        # Store constructor arguments (re-used for processing)
-        self.fn = fn
-        self.args = args
-        self.kwargs = kwargs
-
-    @QtCore.Slot()
-    def run(self):
-        """..."""
-        self.fn(*self.args, **self.kwargs)
-
-
 class MainWindow(QtWidgets.QMainWindow):
     """App window instance."""
     mount_app_grid_signal = QtCore.Signal(object)
