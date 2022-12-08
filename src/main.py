@@ -35,16 +35,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.app_launcher_layout.set_alignment(QtCore.Qt.AlignCenter)
         self.layout_container.add_layout(self.app_launcher_layout)
 
-        self.mount_app_grid_signal.connect(self.mount_app_grid)
+        self.mount_app_grid_signal.connect(self.mount_app_grid_fg)
         self.mount_app_grid_thread = threading.Thread(
-            target=self.mount_app_grid_thread_fn)
+            target=self.mount_app_grid_bg)
         self.mount_app_grid_thread.start()
 
-    def mount_app_grid_thread_fn(self):
+    def mount_app_grid_bg(self):
         time.sleep(2)
         self.mount_app_grid_signal.emit(0)
 
-    def mount_app_grid(self):
+    def mount_app_grid_fg(self):
         w = widgets.AppLauncher(
                 attachments.DesktopFile(
                     '/usr/share/applications/firefox.desktop'))

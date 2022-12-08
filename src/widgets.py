@@ -38,11 +38,11 @@ class AppLauncher(QtWidgets.QWidget):
             desktop_file.as_dict['[Desktop Entry]']['Name'])
         self.layout_container.add_widget(self.app_name)
 
+        self.set_style_sheet('background: rgba(255, 255, 255, 0.05);')
+
     def launch_app(self):
         print(self.app_name.text())
 
     def mouse_press_event(self, event):
         if event.button() == QtCore.Qt.LeftButton:
             self.launch_app()
-            # self.process.finished.connect(self.process_finished)
-            # self.process.start(program, exe)

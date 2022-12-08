@@ -5,6 +5,7 @@
 #   www.freedesktop.org/wiki/Specifications/desktop-entry-spec/
 import os
 import re
+import subprocess
 from subprocess import getoutput
 
 
@@ -194,3 +195,146 @@ class DesktopFile(object):
                         escope_keys_and_values[line_key] = line_value
 
             self.__as_dict[escope_header] = escope_keys_and_values
+
+    def __gt__(self, other) -> bool:
+        if '[Desktop Entry]' in self.__as_dict:
+            return self.__as_dict['[Desktop Entry]']['Name'] > other
+        return self.__url > other
+
+    def __lt__(self, other) -> bool:
+        if '[Desktop Entry]' in self.__as_dict:
+            return self.__as_dict['[Desktop Entry]']['Name'] < other
+        return self.__url < other
+
+    def __eq__(self, other) -> bool:
+        if '[Desktop Entry]' in self.__as_dict:
+            return self.__as_dict['[Desktop Entry]']['Name'] == other
+        return self.__url == other
+
+    def __ge__(self, other) -> bool:
+        if '[Desktop Entry]' in self.__as_dict:
+            return self.__as_dict['[Desktop Entry]']['Name'] >= other
+        return self.__url >= other
+
+    def __le__(self, other) -> bool:
+        if '[Desktop Entry]' in self.__as_dict:
+            return self.__as_dict['[Desktop Entry]']['Name'] <= other
+        return self.__url <= other
+
+    def __ne__(self, other) -> bool:
+        if '[Desktop Entry]' in self.__as_dict:
+            return self.__as_dict['[Desktop Entry]']['Name'] != other
+        return self.__url != other
+
+    def __str__(self) -> str:
+        if '[Desktop Entry]' in self.__as_dict:
+            return f'<DesktopFile: {self.as_dict["[Desktop Entry]"]["Name"]}>'
+        return f'<DesktopFile: {self.__url.split("/")[-1]}>'
+
+
+class MenuSchema(object):
+    """Template to build the menu."""
+    def __init__(self) -> None:
+        """Class constructor
+
+        Initialize class properties.
+        """
+        # https://specifications.freedesktop.org/
+        # menu-spec/menu-spec-1.0.html#category-registry
+        self.__as_dict = {
+            'All': [], 'Development': [], 'Multimedia': [], 'Education': [],
+            'Game': [], 'Graphics': [], 'Network': [], 'Office': [],
+            'Settings': [], 'System': [], 'Utility': [], 'Others': []}
+        self.update_menu()
+
+    @property
+    def as_dict(self) -> dict:
+        """Menu template as a dict
+
+        A dictionary where the keys (str) are the menu categories, and the
+        values are the applications (DesktoFile) displayed in the category.
+        """
+        return self.__as_dict
+
+    def update_menu(self) -> None:
+        """Update menu schema
+
+        Update "as_dict" property.
+        """
+        # percorrer urls
+        desktop_file_locations = DesktopFileLocations()
+        for desktop_file_url in desktop_file_locations.ulrs_by_priority:
+            # Get a file and check if it is a valid file
+            desk_env = subprocess.getoutput('echo $XDG_CURRENT_DESKTOP')
+            desktop_file = DesktopFile(url=desktop_file_url)
+            desktop_file_is_valid = True
+            desktop_entry = None
+
+            if '[Desktop Entry]' not in desktop_file.as_dict:
+                desktop_file_is_valid = False
+            else:
+                desktop_entry = desktop_file.as_dict['[Desktop Entry]']
+
+                if desktop_entry['Type'] != 'Application':
+                    desktop_file_is_valid = False
+                if ('NoDisplay' in desktop_entry and
+                        desktop_entry['NoDisplay'] == 'true'):
+                    desktop_file_is_valid = False
+                if ('Hidden' in desktop_entry and
+                        desktop_entry['Hidden'] == 'true'):
+                    desktop_file_is_valid = False
+                if 'OnlyShowIn' in desktop_entry:
+                    desktop_file_is_valid = False
+                    if desk_env in desktop_entry['OnlyShowIn'].split(';'):
+                        desktop_file_is_valid = True
+                if 'NotShowIn' in desktop_entry:
+                    desktop_file_is_valid = True
+                    if desk_env in desktop_entry['NotShowIn'].split(';'):
+                        desktop_file_is_valid = False
+
+            # Check categories and save in correct category
+            if desktop_file_is_valid:
+                desktop_item = desktop_file
+                # (
+                # desktop_file.as_dict['[Desktop Entry]']['Name'],
+                # desktop_file)
+
+                # Categ 'All'
+                self.__as_dict['All'].append(desktop_item)
+
+                # Categ 'Others'
+                if 'Categories' not in desktop_entry:
+                    self.__as_dict['Others'].append(desktop_item)
+                    continue
+
+                # Remaining categories
+                for categ in self.__as_dict:
+                    if categ in desktop_entry['Categories'].split(';'):
+                        self.__as_dict[categ].append(desktop_item)
+
+            # for item in self.__as_dict:
+            #     la = [x.as_dict['Name'] for x in self.__as_dict[item]]
+
+
+if __name__ == '__main__':
+    import locale
+    m = MenuSchema()
+    for cat, apps in m.as_dict.items():
+        print(f'{cat}: {len(apps)}')
+        if apps:
+            apps.sort()
+            for i in apps:
+                print('\t', i)
+        # appz = []
+        # for a in apps:
+        #     gen_local = f'GenericName[{locale.getdefaultlocale()[0]}]'
+        #     if gen_local in a.as_dict["[Desktop Entry]"]:
+        #         item = a.as_dict["[Desktop Entry]"][gen_local]
+        #         appz.append((item.lower(), item))
+        #     elif 'GenericName' in a.as_dict["[Desktop Entry]"]:
+        #         item = a.as_dict["[Desktop Entry]"]['GenericName']
+        #         appz.append((item.lower(), item))
+        #     else:
+        #         item = a.as_dict["[Desktop Entry]"]['Name']
+        #         appz.append((item.lower(), item))
+        print()
