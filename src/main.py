@@ -2,10 +2,10 @@
 import os
 import sys
 
-import app
+import application
 
 
 if __name__ == '__main__':
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-    app = app.TuxMenu()
+    app = application.Application(sys.argv)
     app.main()
