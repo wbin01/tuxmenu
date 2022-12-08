@@ -294,26 +294,18 @@ class MenuSchema(object):
 
             # Check categories and save in correct category
             if desktop_file_is_valid:
-                desktop_item = desktop_file
-                # (
-                # desktop_file.as_dict['[Desktop Entry]']['Name'],
-                # desktop_file)
-
                 # Categ 'All'
-                self.__as_dict['All'].append(desktop_item)
+                self.__as_dict['All'].append(desktop_file)
 
                 # Categ 'Others'
                 if 'Categories' not in desktop_entry:
-                    self.__as_dict['Others'].append(desktop_item)
+                    self.__as_dict['Others'].append(desktop_file)
                     continue
 
                 # Remaining categories
                 for categ in self.__as_dict:
                     if categ in desktop_entry['Categories'].split(';'):
-                        self.__as_dict[categ].append(desktop_item)
-
-            # for item in self.__as_dict:
-            #     la = [x.as_dict['Name'] for x in self.__as_dict[item]]
+                        self.__as_dict[categ].append(desktop_file)
 
 
 if __name__ == '__main__':
@@ -325,16 +317,4 @@ if __name__ == '__main__':
             apps.sort()
             for i in apps:
                 print('\t', i)
-        # appz = []
-        # for a in apps:
-        #     gen_local = f'GenericName[{locale.getdefaultlocale()[0]}]'
-        #     if gen_local in a.as_dict["[Desktop Entry]"]:
-        #         item = a.as_dict["[Desktop Entry]"][gen_local]
-        #         appz.append((item.lower(), item))
-        #     elif 'GenericName' in a.as_dict["[Desktop Entry]"]:
-        #         item = a.as_dict["[Desktop Entry]"]['GenericName']
-        #         appz.append((item.lower(), item))
-        #     else:
-        #         item = a.as_dict["[Desktop Entry]"]['Name']
-        #         appz.append((item.lower(), item))
         print()
