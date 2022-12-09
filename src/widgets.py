@@ -1,5 +1,7 @@
 #!/usr/bin env python3
 import logging
+import os.path
+
 from xdg import IconTheme
 
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -50,6 +52,16 @@ class AppGrid(QtWidgets.QScrollArea):
             app_launcher.clicked.connect(self.app_launcher_was_clicked)
             self.line_layout.add_widget(app_launcher)
 
+        # Complete line
+        missing_items_num = (
+            self.columns_num -
+            (len(self.desktop_file_list) % self.columns_num))
+        if missing_items_num != self.columns_num:
+            for item in range(missing_items_num):
+                app_launcher = GhostAppLauncher()
+                app_launcher.clicked.connect(self.app_launcher_was_clicked)
+                self.line_layout.add_widget(app_launcher)
+
     @QtCore.Slot()
     def app_launcher_was_clicked(self, widget):
         self.clicked.emit(widget)
@@ -70,6 +82,10 @@ class AppLauncher(QtWidgets.QWidget):
         self.set_layout(self.layout_container)
 
         # Icon
+        self.default_icon_path = os.path.join(
+            os.path.abspath(os.path.dirname(__file__)),
+            'static/defaultapp.svg')
+
         if 'Icon' in self.desktop_file.content['[Desktop Entry]']:
             self.icon_path = IconTheme.getIconPath(
                 iconname=self.desktop_file.content['[Desktop Entry]']['Icon'],
@@ -80,8 +96,7 @@ class AppLauncher(QtWidgets.QWidget):
                 self.pixmap = QtGui.QPixmap(self.icon_path)
             except Exception as err:
                 logging.error(err)
-                self.pixmap = QtGui.QPixmap(
-                    '/usr/share/icons/breeze/apps/48/alienarena.svg')
+                self.pixmap = QtGui.QPixmap(self.default_icon_path)
 
             self.scaled_pixmap = self.pixmap.scaled(
                 48, 48, QtCore.Qt.KeepAspectRatio)
@@ -107,6 +122,47 @@ class AppLauncher(QtWidgets.QWidget):
 
     def __str__(self) -> str:
         return str(self.desktop_file)
+
+
+class GhostAppLauncher(QtWidgets.QWidget):
+    """App launcher widget."""
+    clicked = QtCore.Signal(QtGui.QMouseEvent)
+
+    def __init__(self, *args, **kwargs):
+        """Class constructor."""
+        super().__init__(*args, **kwargs)
+
+        # Main layout
+        self.layout_container = QtWidgets.QVBoxLayout()
+        self.layout_container.set_spacing(0)
+        self.set_layout(self.layout_container)
+
+        # Icon
+        self.pixmap = QtGui.QPixmap(os.path.join(
+            os.path.abspath(os.path.dirname(__file__)),
+            'static/ghostapp.svg'))
+        self.scaled_pixmap = self.pixmap.scaled(
+            48, 48, QtCore.Qt.KeepAspectRatio)
+        self.icon_view = QtWidgets.QLabel(self)
+        self.icon_view.set_pixmap(self.scaled_pixmap)
+        self.icon_view.set_alignment(QtCore.Qt.AlignCenter)
+        self.layout_container.add_widget(self.icon_view)
+
+        # Name
+        self.app_name = QtWidgets.QLabel()
+        self.app_name.set_text(' ')
+
+        self.set_attribute(QtCore.Qt.WA_TranslucentBackground)
+        self.set_style_sheet('background: transparent;')
+
+    @QtCore.Slot()
+    def mouse_press_event(self, event):
+        if event.button() == QtCore.Qt.LeftButton:
+            self.clicked.emit(self)
+            event.ignore()
+
+    def __str__(self) -> str:
+        return '<GhostAppLauncher: Boo>'
 
 
 class ElidedLabel(QtWidgets.QLabel):

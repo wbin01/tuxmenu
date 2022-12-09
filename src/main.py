@@ -69,7 +69,8 @@ class MainWindow(QtWidgets.QMainWindow):
     @QtCore.Slot()
     def app_launcher_was_clicked(self, widget):
         print(widget)
-        print(widget.desktop_file.content['[Desktop Entry]']['Name'])
+        if str(widget) != '<GhostAppLauncher: Boo>':
+            print(widget.desktop_file.content['[Desktop Entry]']['Name'])
         self.close()
 
 
