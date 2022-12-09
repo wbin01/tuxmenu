@@ -19,6 +19,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         """Class constructor."""
         super().__init__(*args, **kwargs)
+        # CSS
+        self.set_custom_style()
+
         # Main container
         self.main_container = QtWidgets.QWidget()
         self.main_container.set_contents_margins(0, 0, 0, 0)
@@ -40,29 +43,42 @@ class MainWindow(QtWidgets.QMainWindow):
             target=self.mount_app_grid_bg)
         self.mount_app_grid_thread.start()
 
+    @QtCore.Slot()
+    def set_custom_style(self):
+        style_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), 'static/style.qss')
+        with open(style_path, 'r') as f:
+            _style = f.read()
+            self.set_style_sheet(_style)
+
+    @QtCore.Slot()
     def mount_app_grid_bg(self):
-        time.sleep(2)
+        time.sleep(1)
         self.mount_app_grid_signal.emit(0)
 
+    @QtCore.Slot()
     def mount_app_grid_fg(self):
-        w = widgets.AppLauncher(
-                attachments.DesktopFile(
-                    '/usr/share/applications/firefox.desktop'))
+        w = widgets.AppGrid()
+        w.clicked.connect(self.app_launcher_was_clicked)
         self.app_launcher_layout.add_widget(w)
+
+    @QtCore.Slot()
+    def app_launcher_was_clicked(self, widget):
+        print(widget)
+        print(widget.desktop_file.as_dict['[Desktop Entry]']['Name'])
+        self.close()
 
 
 class Application(object):
     """Desktop menu for Linux written in Python and Qt."""
+    control_signal = QtCore.Signal(str)
+
     def __init__(self, args):
         """Class constructor."""
         self.application = QtWidgets.QApplication(args)
         self.application_icon = 'tuxmenu.png'
         self.application_name = 'TuxMenu'
         self.application_window = MainWindow()
-
-    def on_quit(self) -> None:
-        """Close the app."""
-        self.app.quit()
 
     def main(self) -> None:
         """Start the app."""

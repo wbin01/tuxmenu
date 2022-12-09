@@ -309,12 +309,13 @@ class MenuSchema(object):
 
 
 if __name__ == '__main__':
-    import locale
-    m = MenuSchema()
-    for cat, apps in m.as_dict.items():
-        print(f'{cat}: {len(apps)}')
-        if apps:
-            apps.sort()
-            for i in apps:
-                print('\t', i)
-        print()
+    # import locale
+    # m = MenuSchema()
+    # for cat, apps in m.as_dict.items():
+    #     print(f'{cat}: {len(apps)}')
+    #     if apps:
+    #         apps.sort()
+    #         for i in apps:
+    #             print('\t', i)
+    #     print()
+    pass
