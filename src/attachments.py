@@ -132,32 +132,32 @@ class DesktopFile(object):
             String from a desktop file like: "/path/file.desktop"
         """
         self.__url = os.path.abspath(url)
-        self.__as_dict = None
+        self.__content = None
 
     @property
-    def as_dict(self) -> dict:
+    def content(self) -> dict:
         """Contents of a desktop file as a dictionary
 
         Example:
         >>> desktop_file = DesktopFile(
         ...     url='/usr/share/applications/firefox.desktop')
-        >>> desktop_file.as_dict['[Desktop Entry]']['Name']
+        >>> desktop_file.content['[Desktop Entry]']['Name']
         'Firefox Web Browser'
-        >>> desktop_file.as_dict['[Desktop Entry]']['Type']
+        >>> desktop_file.content['[Desktop Entry]']['Type']
         'Application'
-        >>> for key in desktop_file.as_dict.keys():
+        >>> for key in desktop_file.content.keys():
         ...     print(key)
         ...
         [Desktop Entry]
         [Desktop Action new-window]
         [Desktop Action new-private-window]
         >>>
-        >>> desktop_file.as_dict['[Desktop Action new-window]']['Name']
+        >>> desktop_file.content['[Desktop Action new-window]']['Name']
         'Open a New Window'
         """
-        if not self.__as_dict:
+        if not self.__content:
             self.__parse_file_to_dict()
-        return self.__as_dict
+        return self.__content
 
     @property
     def url(self) -> str:
@@ -181,7 +181,7 @@ class DesktopFile(object):
                 re.split('\[[A-Z]', desktop_file_line)[1:])]
 
         # Create dict
-        self.__as_dict = {}
+        self.__content = {}
         for scope in desktop_scope:
             escope_header = ''           # [Desktop Entry]
             escope_keys_and_values = {}  # Key=Value
@@ -194,41 +194,41 @@ class DesktopFile(object):
                         line_key, line_value = scopeline.split('=', 1)
                         escope_keys_and_values[line_key] = line_value
 
-            self.__as_dict[escope_header] = escope_keys_and_values
+            self.__content[escope_header] = escope_keys_and_values
 
     def __gt__(self, other) -> bool:
-        if '[Desktop Entry]' in self.as_dict:
-            return self.as_dict['[Desktop Entry]']['Name'].lower() > other
+        if '[Desktop Entry]' in self.content:
+            return self.content['[Desktop Entry]']['Name'].lower() > other
         return self.url > other
 
     def __lt__(self, other) -> bool:
-        if '[Desktop Entry]' in self.as_dict:
-            return self.as_dict['[Desktop Entry]']['Name'].lower() < other
+        if '[Desktop Entry]' in self.content:
+            return self.content['[Desktop Entry]']['Name'].lower() < other
         return self.url < other
 
     def __eq__(self, other) -> bool:
-        if '[Desktop Entry]' in self.as_dict:
-            return self.as_dict['[Desktop Entry]']['Name'].lower() == other
+        if '[Desktop Entry]' in self.content:
+            return self.content['[Desktop Entry]']['Name'].lower() == other
         return self.url == other
 
     def __ge__(self, other) -> bool:
-        if '[Desktop Entry]' in self.as_dict:
-            return self.as_dict['[Desktop Entry]']['Name'].lower() >= other
+        if '[Desktop Entry]' in self.content:
+            return self.content['[Desktop Entry]']['Name'].lower() >= other
         return self.url >= other
 
     def __le__(self, other) -> bool:
-        if '[Desktop Entry]' in self.as_dict:
-            return self.as_dict['[Desktop Entry]']['Name'].lower() <= other
+        if '[Desktop Entry]' in self.content:
+            return self.content['[Desktop Entry]']['Name'].lower() <= other
         return self.url <= other
 
     def __ne__(self, other) -> bool:
-        if '[Desktop Entry]' in self.as_dict:
-            return self.as_dict['[Desktop Entry]']['Name'].lower() != other
+        if '[Desktop Entry]' in self.content:
+            return self.content['[Desktop Entry]']['Name'].lower() != other
         return self.url != other
 
     def __str__(self) -> str:
-        if '[Desktop Entry]' in self.as_dict:
-            return f'<DesktopFile: {self.as_dict["[Desktop Entry]"]["Name"]}>'
+        if '[Desktop Entry]' in self.content:
+            return f'<DesktopFile: {self.content["[Desktop Entry]"]["Name"]}>'
         return f'<DesktopFile: {self.url.split("/")[-1]}>'
 
 
@@ -241,22 +241,22 @@ class MenuSchema(object):
         """
         # https://specifications.freedesktop.org/
         # menu-spec/menu-spec-1.0.html#category-registry
-        self.__as_dict = {
+        self.__schema = {
             'All': [], 'Development': [], 'Multimedia': [], 'Education': [],
             'Game': [], 'Graphics': [], 'Network': [], 'Office': [],
             'Settings': [], 'System': [], 'Utility': [], 'Others': []}
-        self.update_menu()
+        self.update_schema()
 
     @property
-    def as_dict(self) -> dict:
+    def schema(self) -> dict:
         """Menu template as a dict
 
         A dictionary where the keys (str) are the menu categories, and the
         values are the applications (DesktoFile) displayed in the category.
         """
-        return self.__as_dict
+        return self.__schema
 
-    def update_menu(self) -> None:
+    def update_schema(self) -> None:
         """Update menu schema
 
         Update "as_dict" property.
@@ -270,10 +270,10 @@ class MenuSchema(object):
             desktop_file_is_valid = True
             desktop_entry = None
 
-            if '[Desktop Entry]' not in desktop_file.as_dict:
+            if '[Desktop Entry]' not in desktop_file.content:
                 desktop_file_is_valid = False
             else:
-                desktop_entry = desktop_file.as_dict['[Desktop Entry]']
+                desktop_entry = desktop_file.content['[Desktop Entry]']
 
                 if desktop_entry['Type'] != 'Application':
                     desktop_file_is_valid = False
@@ -295,23 +295,23 @@ class MenuSchema(object):
             # Check categories and save in correct category
             if desktop_file_is_valid:
                 # Categ 'All'
-                self.__as_dict['All'].append(desktop_file)
+                self.__schema['All'].append(desktop_file)
 
                 # Categ 'Others'
                 if 'Categories' not in desktop_entry:
-                    self.__as_dict['Others'].append(desktop_file)
+                    self.__schema['Others'].append(desktop_file)
                     continue
 
                 # Remaining categories
-                for categ in self.__as_dict:
+                for categ in self.__schema:
                     if categ in desktop_entry['Categories'].split(';'):
-                        self.__as_dict[categ].append(desktop_file)
+                        self.__schema[categ].append(desktop_file)
 
 
 if __name__ == '__main__':
     # import locale
     # m = MenuSchema()
-    # for cat, apps in m.as_dict.items():
+    # for cat, apps in m.schema.items():
     #     print(f'{cat}: {len(apps)}')
     #     if apps:
     #         apps.sort()

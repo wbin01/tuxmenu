@@ -38,9 +38,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.app_launcher_layout.set_alignment(QtCore.Qt.AlignCenter)
         self.layout_container.add_layout(self.app_launcher_layout)
 
-        self.mount_app_grid_signal.connect(self.mount_app_grid_fg)
+        self.mount_app_grid_signal.connect(self.mount_app_grid_fg_thread)
         self.mount_app_grid_thread = threading.Thread(
-            target=self.mount_app_grid_bg)
+            target=self.mount_app_grid_bg_thread)
         self.mount_app_grid_thread.start()
 
     @QtCore.Slot()
@@ -52,20 +52,24 @@ class MainWindow(QtWidgets.QMainWindow):
             self.set_style_sheet(_style)
 
     @QtCore.Slot()
-    def mount_app_grid_bg(self):
-        time.sleep(1)
+    def mount_app_grid_bg_thread(self):
+        time.sleep(0.03)
         self.mount_app_grid_signal.emit(0)
 
     @QtCore.Slot()
-    def mount_app_grid_fg(self):
-        w = widgets.AppGrid()
-        w.clicked.connect(self.app_launcher_was_clicked)
-        self.app_launcher_layout.add_widget(w)
+    def mount_app_grid_fg_thread(self):
+        menu_schema = attachments.MenuSchema()
+        all_menu_desktop_files = menu_schema.schema['All']
+        all_menu_desktop_files.sort()
+
+        app_grid = widgets.AppGrid(desktop_file_list=all_menu_desktop_files)
+        app_grid.clicked.connect(self.app_launcher_was_clicked)
+        self.app_launcher_layout.add_widget(app_grid)
 
     @QtCore.Slot()
     def app_launcher_was_clicked(self, widget):
         print(widget)
-        print(widget.desktop_file.as_dict['[Desktop Entry]']['Name'])
+        print(widget.desktop_file.content['[Desktop Entry]']['Name'])
         self.close()
 
 

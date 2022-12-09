@@ -8,6 +8,53 @@ from __feature__ import snake_case
 from attachments import DesktopFile, MenuSchema
 
 
+class AppGrid(QtWidgets.QScrollArea):
+    """App launcher grid widget."""
+    clicked = QtCore.Signal(QtGui.QMouseEvent)
+
+    def __init__(
+            self,
+            desktop_file_list: list,
+            columns_num: int = 4,
+            *args, **kwargs):
+        """Class constructor.
+
+        :param desktop_file_list: [DesktopFile, DesktopFile]
+        :param columns_num: Number of grid columns, default is 4
+        """
+        super().__init__(*args, **kwargs)
+        self.desktop_file_list = desktop_file_list
+        self.columns_num = columns_num
+
+        # AppGrid settings
+        self.set_attribute(QtCore.Qt.WA_TranslucentBackground)
+        self.set_style_sheet('background: transparent;')
+
+        self.set_vertical_scroll_bar_policy(QtCore.Qt.ScrollBarAlwaysOn)
+        self.set_horizontal_scroll_bar_policy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.set_widget_resizable(True)
+
+        self.widget = QtWidgets.QWidget()
+        self.set_widget(self.widget)
+
+        self.layout_container = QtWidgets.QVBoxLayout()
+        self.widget.set_layout(self.layout_container)
+
+        self.line_layout = None
+        for num, desktop_file in enumerate(self.desktop_file_list):
+            if num % self.columns_num == 0:
+                self.line_layout = QtWidgets.QHBoxLayout()
+                self.layout_container.add_layout(self.line_layout)
+
+            app_launcher = AppLauncher(desktop_file)
+            app_launcher.clicked.connect(self.app_launcher_was_clicked)
+            self.line_layout.add_widget(app_launcher)
+
+    @QtCore.Slot()
+    def app_launcher_was_clicked(self, widget):
+        self.clicked.emit(widget)
+
+
 class AppLauncher(QtWidgets.QWidget):
     """App launcher widget."""
     clicked = QtCore.Signal(QtGui.QMouseEvent)
@@ -23,9 +70,9 @@ class AppLauncher(QtWidgets.QWidget):
         self.set_layout(self.layout_container)
 
         # Icon
-        if 'Icon' in self.desktop_file.as_dict['[Desktop Entry]']:
+        if 'Icon' in self.desktop_file.content['[Desktop Entry]']:
             self.icon_path = IconTheme.getIconPath(
-                iconname=self.desktop_file.as_dict['[Desktop Entry]']['Icon'],
+                iconname=self.desktop_file.content['[Desktop Entry]']['Icon'],
                 size=48,
                 theme='breeze',
                 extensions=['png', 'svg', 'xpm'])
@@ -46,7 +93,7 @@ class AppLauncher(QtWidgets.QWidget):
         # Name
         self.app_name = QtWidgets.QLabel()
         self.app_name.set_text(
-            self.desktop_file.as_dict['[Desktop Entry]']['Name'])
+            self.desktop_file.content['[Desktop Entry]']['Name'])
         self.layout_container.add_widget(self.app_name)
 
         self.set_attribute(QtCore.Qt.WA_TranslucentBackground)
@@ -60,39 +107,6 @@ class AppLauncher(QtWidgets.QWidget):
 
     def __str__(self) -> str:
         return str(self.desktop_file)
-
-
-class AppGrid(QtWidgets.QScrollArea):
-    """App launcher widget."""
-    clicked = QtCore.Signal(QtGui.QMouseEvent)
-
-    def __init__(self, *args, **kwargs):
-        """Class constructor."""
-        super().__init__(*args, **kwargs)
-        self.menu_schema = MenuSchema()
-        self.set_attribute(QtCore.Qt.WA_TranslucentBackground)
-        self.set_style_sheet('background: transparent;')
-
-        self.set_vertical_scroll_bar_policy(QtCore.Qt.ScrollBarAlwaysOn)
-        self.set_horizontal_scroll_bar_policy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.set_widget_resizable(True)
-
-        self.widget = QtWidgets.QWidget()
-        self.set_widget(self.widget)
-
-        self.layout_container = QtWidgets.QVBoxLayout()
-        self.widget.set_layout(self.layout_container)
-
-        apps = self.menu_schema.as_dict['All']
-        apps.sort()
-        for item in apps:
-            app_launcher = AppLauncher(item)
-            app_launcher.clicked.connect(self.app_launcher_was_clicked)
-            self.layout_container.add_widget(app_launcher)
-
-    @QtCore.Slot()
-    def app_launcher_was_clicked(self, widget):
-        self.clicked.emit(widget)
 
 
 class ElidedLabel(QtWidgets.QLabel):
