@@ -198,32 +198,32 @@ class DesktopFile(object):
 
     def __gt__(self, other) -> bool:
         if '[Desktop Entry]' in self.as_dict:
-            return self.as_dict['[Desktop Entry]']['Name'] > other
+            return self.as_dict['[Desktop Entry]']['Name'].lower() > other
         return self.url > other
 
     def __lt__(self, other) -> bool:
         if '[Desktop Entry]' in self.as_dict:
-            return self.as_dict['[Desktop Entry]']['Name'] < other
+            return self.as_dict['[Desktop Entry]']['Name'].lower() < other
         return self.url < other
 
     def __eq__(self, other) -> bool:
         if '[Desktop Entry]' in self.as_dict:
-            return self.as_dict['[Desktop Entry]']['Name'] == other
+            return self.as_dict['[Desktop Entry]']['Name'].lower() == other
         return self.url == other
 
     def __ge__(self, other) -> bool:
         if '[Desktop Entry]' in self.as_dict:
-            return self.as_dict['[Desktop Entry]']['Name'] >= other
+            return self.as_dict['[Desktop Entry]']['Name'].lower() >= other
         return self.url >= other
 
     def __le__(self, other) -> bool:
         if '[Desktop Entry]' in self.as_dict:
-            return self.as_dict['[Desktop Entry]']['Name'] <= other
+            return self.as_dict['[Desktop Entry]']['Name'].lower() <= other
         return self.url <= other
 
     def __ne__(self, other) -> bool:
         if '[Desktop Entry]' in self.as_dict:
-            return self.as_dict['[Desktop Entry]']['Name'] != other
+            return self.as_dict['[Desktop Entry]']['Name'].lower() != other
         return self.url != other
 
     def __str__(self) -> str:

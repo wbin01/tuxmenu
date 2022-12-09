@@ -83,7 +83,9 @@ class AppGrid(QtWidgets.QScrollArea):
         self.layout_container = QtWidgets.QVBoxLayout()
         self.widget.set_layout(self.layout_container)
 
-        for item in self.menu_schema.as_dict['All']:
+        apps = self.menu_schema.as_dict['All']
+        apps.sort()
+        for item in apps:
             app_launcher = AppLauncher(item)
             app_launcher.clicked.connect(self.app_launcher_was_clicked)
             self.layout_container.add_widget(app_launcher)
