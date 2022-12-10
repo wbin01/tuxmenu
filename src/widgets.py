@@ -21,7 +21,6 @@ class AppGrid(QtWidgets.QScrollArea):
             self,
             desktop_file_list: list,
             columns_num: int = 5,
-            title: str = None,
             *args, **kwargs):
         """Class constructor.
 
@@ -31,7 +30,6 @@ class AppGrid(QtWidgets.QScrollArea):
         super().__init__(*args, **kwargs)
         self.desktop_file_list = desktop_file_list
         self.columns_num = columns_num
-        self.title = title
 
         # Style
         self.set_alignment(QtCore.Qt.AlignTop)
@@ -53,13 +51,6 @@ class AppGrid(QtWidgets.QScrollArea):
         self.main_layout.set_contents_margins(0, 0, 0, 0)
         self.main_layout.set_spacing(0)
         self.main_container.set_layout(self.main_layout)
-
-        # Title
-        if self.title:
-            self.title = QtWidgets.QLabel(self.title)
-            self.title.set_alignment(QtCore.Qt.AlignHCenter)
-            self.title.set_style_sheet('font-size: 24px;')
-            self.main_layout.add_widget(self.title)
 
         # Grid creation
         self.line_layout = None

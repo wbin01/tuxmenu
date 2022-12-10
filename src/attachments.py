@@ -242,7 +242,8 @@ class MenuSchema(object):
         # https://specifications.freedesktop.org/
         # menu-spec/menu-spec-1.0.html#category-registry
         self.__schema = {
-            'All': [], 'Development': [], 'Multimedia': [], 'Education': [],
+            'All': [], 'Development': [], 'Education': [],
+            'Multimedia': [], 'AudioVideo': [], 'Audio': [], 'Video': [],
             'Game': [], 'Graphics': [], 'Network': [], 'Office': [],
             'Settings': [], 'System': [], 'Utility': [], 'Others': []}
         self.update_schema()
@@ -305,7 +306,14 @@ class MenuSchema(object):
                 # Remaining categories
                 for categ in self.__schema:
                     if categ in desktop_entry['Categories'].split(';'):
-                        self.__schema[categ].append(desktop_file)
+                        # Convert 'Audio' and 'Video' for 'Multimedia'
+                        if (categ == 'AudioVideo' or
+                                categ == 'Audio' or categ == 'Video'):
+                            categ = 'Multimedia'
+                            if desktop_file not in self.__schema[categ]:
+                                self.__schema[categ].append(desktop_file)
+                        else:
+                            self.__schema[categ].append(desktop_file)
 
 
 if __name__ == '__main__':

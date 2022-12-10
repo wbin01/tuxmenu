@@ -62,15 +62,22 @@ class MainWindow(QtWidgets.QMainWindow):
     @QtCore.Slot()
     def mount_app_grid_fg_thread(self):
         """..."""
+        # Menu schema
         menu_schema = attachments.MenuSchema()
-        desktop_files_items = menu_schema.schema['All']
+        desktop_files_items = menu_schema.schema['Multimedia']
         desktop_files_items.sort()
 
+        # Title
+        title = QtWidgets.QLabel(f'All apps {len(desktop_files_items)}')
+        title.set_alignment(QtCore.Qt.AlignHCenter)
+        title.set_style_sheet('background: transparent; font-size: 24px;')
+        self.app_grid_layout.add_widget(title)
+
+        # App grid
         if desktop_files_items:
             app_grid = widgets.AppGrid(
                 desktop_file_list=desktop_files_items,
-                columns_num=6,
-                title='All')
+                columns_num=6)
             app_grid.set_alignment(QtCore.Qt.AlignTop)
             app_grid.clicked.connect(self.app_launcher_was_clicked)
             self.app_grid_layout.add_widget(app_grid)
