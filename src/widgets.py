@@ -85,14 +85,9 @@ class AppLauncher(QtWidgets.QWidget):
         self.desktop_file = desktop_file
 
         # settings
-        self.bg_color = (
-            f'{random.randint(100, 255)}, '
-            f'{random.randint(100, 255)}, '
-            f'{random.randint(100, 255)}, ')
         self.set_contents_margins(0, 0, 0, 0)
         self.set_fixed_height(150)
         # self.set_attribute(QtCore.Qt.WA_TranslucentBackground)
-        self.set_style_sheet(f'background-color: rgba({self.bg_color}0.05)')
 
         # Main layout
         self.layout = QtWidgets.QVBoxLayout()
@@ -102,6 +97,15 @@ class AppLauncher(QtWidgets.QWidget):
 
         self.widget_container = QtWidgets.QWidget()
         self.widget_container.set_contents_margins(0, 0, 0, 0)
+        self.bg_color_red, self.bg_color_green, self.bg_color_blue = (
+            random.randint(50, 200),
+            random.randint(50, 200),
+            random.randint(50, 200))
+        self.widget_container.set_style_sheet(
+            'background-color: rgba('
+            f'{self.bg_color_red}, '
+            f'{self.bg_color_green}, '
+            f'{self.bg_color_blue}, 0.05)')
         self.layout.add_widget(self.widget_container)
 
         self.layout_container = QtWidgets.QVBoxLayout()
@@ -154,12 +158,18 @@ class AppLauncher(QtWidgets.QWidget):
 
     def enter_event(self, event):
         self.widget_container.set_style_sheet(
-            f'background-color: rgba({self.bg_color}0.1);')
+            'background-color: rgba('
+            f'{self.bg_color_red}, '
+            f'{self.bg_color_green}, '
+            f'{self.bg_color_blue}, 0.15)')
         event.ignore()
 
     def leave_event(self, event):
         self.widget_container.set_style_sheet(
-            f'background-color: rgba({self.bg_color}0.05);')
+            'background-color: rgba('
+            f'{self.bg_color_red}, '
+            f'{self.bg_color_green}, '
+            f'{self.bg_color_blue}, 0.05)')
         # self.widget_container.set_style_sheet(
         #     'background-color: transparent;')
         event.ignore()
