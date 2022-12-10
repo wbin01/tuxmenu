@@ -29,14 +29,21 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Main layout
         self.layout_container = QtWidgets.QVBoxLayout()
+        self.layout_container.set_alignment(QtCore.Qt.AlignTop)
         self.layout_container.set_spacing(0)
         self.main_container.set_layout(self.layout_container)
 
         # App launcher
-        self.app_launcher_layout = QtWidgets.QVBoxLayout()
-        self.app_launcher_layout.set_spacing(0)
-        self.app_launcher_layout.set_alignment(QtCore.Qt.AlignCenter)
-        self.layout_container.add_layout(self.app_launcher_layout)
+        self.app_grid_layout = QtWidgets.QVBoxLayout()
+        self.app_grid_layout.set_spacing(0)
+        self.app_grid_layout.set_alignment(QtCore.Qt.AlignTop)
+        self.layout_container.add_layout(self.app_grid_layout)
+
+        w = QtWidgets.QWidget()
+        w.set_size_policy(
+            QtWidgets.QSizePolicy.Expanding,
+            QtWidgets.QSizePolicy.Expanding)
+        self.layout_container.add_widget(w)
 
         self.mount_app_grid_signal.connect(self.mount_app_grid_fg_thread)
         self.mount_app_grid_thread = threading.Thread(
@@ -59,12 +66,14 @@ class MainWindow(QtWidgets.QMainWindow):
     @QtCore.Slot()
     def mount_app_grid_fg_thread(self):
         menu_schema = attachments.MenuSchema()
-        all_menu_desktop_files = menu_schema.schema['All']
+        all_menu_desktop_files = menu_schema.schema['Game']
         all_menu_desktop_files.sort()
 
-        app_grid = widgets.AppGrid(desktop_file_list=all_menu_desktop_files)
+        app_grid = widgets.AppGrid(
+            desktop_file_list=all_menu_desktop_files, columns_num=5)
+        app_grid.set_alignment(QtCore.Qt.AlignTop)
         app_grid.clicked.connect(self.app_launcher_was_clicked)
-        self.app_launcher_layout.add_widget(app_grid)
+        self.app_grid_layout.add_widget(app_grid)
 
     @QtCore.Slot()
     def app_launcher_was_clicked(self, widget):
@@ -95,8 +104,8 @@ class Application(object):
         self.application_window.set_window_icon(app_icon)
 
         # Size
-        self.application_window.set_minimum_height(600)
-        self.application_window.set_minimum_width(1000)
+        self.application_window.set_minimum_height(500)
+        self.application_window.set_minimum_width(500)
 
         # Blur
         self.application_window.set_attribute(
