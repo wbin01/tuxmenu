@@ -29,7 +29,7 @@ class AppGrid(QtWidgets.QScrollArea):
         self.desktop_file_list = desktop_file_list
         self.columns_num = columns_num
 
-        # AppGrid settings
+        # Style
         self.set_contents_margins(0, 0, 0, 0)
         self.set_attribute(QtCore.Qt.WA_TranslucentBackground)
         self.set_style_sheet('background: transparent;')
@@ -38,6 +38,7 @@ class AppGrid(QtWidgets.QScrollArea):
         self.set_horizontal_scroll_bar_policy(QtCore.Qt.ScrollBarAlwaysOff)
         self.set_widget_resizable(True)  # ScrollBarAlwaysOn
 
+        # Main layout
         self.widget = QtWidgets.QWidget()
         self.widget.set_contents_margins(0, 0, 0, 0)
         self.set_widget(self.widget)
@@ -47,6 +48,7 @@ class AppGrid(QtWidgets.QScrollArea):
         self.layout_container.set_spacing(0)
         self.widget.set_layout(self.layout_container)
 
+        # Grid creation
         self.line_layout = None
         for num, desktop_file in enumerate(self.desktop_file_list):
             if num % self.columns_num == 0:
@@ -60,7 +62,7 @@ class AppGrid(QtWidgets.QScrollArea):
             app_launcher.clicked.connect(self.app_launcher_was_clicked)
             self.line_layout.add_widget(app_launcher)
 
-        # Complete line
+        # Complete grid line
         missing_items_num = (
             self.columns_num -
             (len(self.desktop_file_list) % self.columns_num))
@@ -72,6 +74,7 @@ class AppGrid(QtWidgets.QScrollArea):
 
     @QtCore.Slot()
     def app_launcher_was_clicked(self, widget):
+        """..."""
         self.clicked.emit(widget)
 
 
@@ -84,10 +87,23 @@ class AppLauncher(QtWidgets.QWidget):
         super().__init__(*args, **kwargs)
         self.desktop_file = desktop_file
 
-        # settings
+        # Style
         self.set_contents_margins(0, 0, 0, 0)
         self.set_fixed_height(150)
-        # self.set_attribute(QtCore.Qt.WA_TranslucentBackground)
+        self.bg_color_red, self.bg_color_green, self.bg_color_blue = (
+            random.randint(50, 200),
+            random.randint(50, 200),
+            random.randint(50, 200))
+        self.style_sheet = (
+            'background-color: rgba('
+            f'{self.bg_color_red}, '
+            f'{self.bg_color_green}, '
+            f'{self.bg_color_blue}, 0.05)')
+        self.style_sheet_hover = (
+            'background-color: rgba('
+            f'{self.bg_color_red}, '
+            f'{self.bg_color_green}, '
+            f'{self.bg_color_blue}, 0.1)')
 
         # Main layout
         self.layout = QtWidgets.QVBoxLayout()
@@ -96,21 +112,11 @@ class AppLauncher(QtWidgets.QWidget):
         self.set_layout(self.layout)
 
         self.widget_container = QtWidgets.QWidget()
-        self.widget_container.set_contents_margins(0, 0, 0, 0)
-        self.bg_color_red, self.bg_color_green, self.bg_color_blue = (
-            random.randint(50, 200),
-            random.randint(50, 200),
-            random.randint(50, 200))
-        self.widget_container.set_style_sheet(
-            'background-color: rgba('
-            f'{self.bg_color_red}, '
-            f'{self.bg_color_green}, '
-            f'{self.bg_color_blue}, 0.05)')
+        self.widget_container.set_style_sheet(self.style_sheet)
         self.layout.add_widget(self.widget_container)
 
         self.layout_container = QtWidgets.QVBoxLayout()
         self.layout_container.set_contents_margins(0, 30, 0, 0)
-        self.layout_container.set_spacing(0)
         self.widget_container.set_layout(self.layout_container)
 
         # Icon
@@ -132,7 +138,6 @@ class AppLauncher(QtWidgets.QWidget):
                 48, 48, QtCore.Qt.KeepAspectRatio)
             self.icon_view = QtWidgets.QLabel(self)
             self.icon_view.set_style_sheet('background-color: transparent;')
-            self.icon_view.set_contents_margins(0, 0, 0, 0)
             self.icon_view.set_size_policy(
                 QtWidgets.QSizePolicy.Expanding,
                 QtWidgets.QSizePolicy.Expanding)
@@ -143,7 +148,6 @@ class AppLauncher(QtWidgets.QWidget):
         # Name
         self.app_name_layout = QtWidgets.QHBoxLayout()
         self.app_name_layout.set_contents_margins(0, 0, 0, 30)
-        self.app_name_layout.set_spacing(0)
         self.layout_container.add_layout(self.app_name_layout)
 
         self.app_name = ElidedLabel()
@@ -151,31 +155,32 @@ class AppLauncher(QtWidgets.QWidget):
             QtCore.Qt.AlignTop | QtCore.Qt.AlignHCenter)
         self.app_name.set_text(
             self.desktop_file.content['[Desktop Entry]']['Name'])
-        self.app_name.set_contents_margins(0, 0, 0, 0)
         self.app_name.set_style_sheet('background-color: transparent;')
         self.app_name.set_fixed_width(100)
         self.app_name_layout.add_widget(self.app_name)
 
+        # Accent
+        self.accent_widget = QtWidgets.QWidget()
+        self.accent_widget.set_style_sheet(self.style_sheet)
+        self.accent_widget.set_fixed_height(5)
+        self.layout.add_widget(self.accent_widget)
+
     def enter_event(self, event):
-        self.widget_container.set_style_sheet(
-            'background-color: rgba('
-            f'{self.bg_color_red}, '
-            f'{self.bg_color_green}, '
-            f'{self.bg_color_blue}, 0.15)')
+        """..."""
+        self.widget_container.set_style_sheet(self.style_sheet_hover)
+        self.accent_widget.set_style_sheet(
+            'background-color: rgba(255, 255, 255, 0.3);')
         event.ignore()
 
     def leave_event(self, event):
-        self.widget_container.set_style_sheet(
-            'background-color: rgba('
-            f'{self.bg_color_red}, '
-            f'{self.bg_color_green}, '
-            f'{self.bg_color_blue}, 0.05)')
-        # self.widget_container.set_style_sheet(
-        #     'background-color: transparent;')
+        """..."""
+        self.widget_container.set_style_sheet(self.style_sheet)
+        self.accent_widget.set_style_sheet(self.style_sheet)
         event.ignore()
 
     @QtCore.Slot()
     def mouse_press_event(self, event):
+        """..."""
         if event.button() == QtCore.Qt.LeftButton:
             self.clicked.emit(self)
             event.ignore()
@@ -224,6 +229,7 @@ class GhostAppLauncher(QtWidgets.QWidget):
 
     @QtCore.Slot()
     def mouse_press_event(self, event):
+        """..."""
         if event.button() == QtCore.Qt.LeftButton:
             self.clicked.emit(self)
             event.ignore()
@@ -233,12 +239,13 @@ class GhostAppLauncher(QtWidgets.QWidget):
 
 
 class ElidedLabel(QtWidgets.QLabel):
+    """..."""
     def paint_event(self, event):
-        event.ignore()
+        """..."""
         painter = QtGui.QPainter(self)
-
         metrics = QtGui.QFontMetrics(self.font())
         elided = metrics.elided_text(
             self.text(), QtCore.Qt.ElideRight, self.width())
-
         painter.draw_text(self.rect(), self.alignment(), elided)
+
+        event.ignore()
