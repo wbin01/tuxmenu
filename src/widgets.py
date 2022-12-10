@@ -30,6 +30,7 @@ class AppGrid(QtWidgets.QScrollArea):
         self.columns_num = columns_num
 
         # Style
+        self.set_alignment(QtCore.Qt.AlignTop)
         self.set_contents_margins(0, 0, 0, 0)
         self.set_attribute(QtCore.Qt.WA_TranslucentBackground)
         self.set_style_sheet('background: transparent;')
@@ -44,6 +45,7 @@ class AppGrid(QtWidgets.QScrollArea):
         self.set_widget(self.widget)
 
         self.layout_container = QtWidgets.QVBoxLayout()
+        self.layout_container.set_alignment(QtCore.Qt.AlignTop)
         self.layout_container.set_contents_margins(0, 0, 0, 0)
         self.layout_container.set_spacing(0)
         self.widget.set_layout(self.layout_container)
@@ -71,6 +73,8 @@ class AppGrid(QtWidgets.QScrollArea):
                 app_launcher = GhostAppLauncher()
                 app_launcher.clicked.connect(self.app_launcher_was_clicked)
                 self.line_layout.add_widget(app_launcher)
+
+        self.layout_container.add_stretch(1)
 
     @QtCore.Slot()
     def app_launcher_was_clicked(self, widget):

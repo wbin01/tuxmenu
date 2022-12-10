@@ -60,7 +60,7 @@ class MainWindow(QtWidgets.QMainWindow):
     @QtCore.Slot()
     def mount_app_grid_fg_thread(self):
         menu_schema = attachments.MenuSchema()
-        all_menu_desktop_files = menu_schema.schema['All']
+        all_menu_desktop_files = menu_schema.schema['Office']
         all_menu_desktop_files.sort()
 
         app_grid = widgets.AppGrid(
