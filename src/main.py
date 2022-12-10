@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import os
 import sys
-import time
 import threading
+import time
 
 from BlurWindow.blurWindow import GlobalBlur
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -54,20 +54,21 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @QtCore.Slot()
     def mount_app_grid_bg_thread(self):
-        time.sleep(0.03)
+        time.sleep(0.05)
         self.mount_app_grid_signal.emit(0)
 
     @QtCore.Slot()
     def mount_app_grid_fg_thread(self):
         menu_schema = attachments.MenuSchema()
-        all_menu_desktop_files = menu_schema.schema['Graphics']
-        all_menu_desktop_files.sort()
+        desktop_files_items = menu_schema.schema['All']
+        desktop_files_items.sort()
 
-        app_grid = widgets.AppGrid(
-            desktop_file_list=all_menu_desktop_files, columns_num=6)
-        app_grid.set_alignment(QtCore.Qt.AlignTop)
-        app_grid.clicked.connect(self.app_launcher_was_clicked)
-        self.app_grid_layout.add_widget(app_grid)
+        if desktop_files_items:
+            app_grid = widgets.AppGrid(
+                desktop_file_list=desktop_files_items, columns_num=6)
+            app_grid.set_alignment(QtCore.Qt.AlignTop)
+            app_grid.clicked.connect(self.app_launcher_was_clicked)
+            self.app_grid_layout.add_widget(app_grid)
 
     @QtCore.Slot()
     def app_launcher_was_clicked(self, widget):

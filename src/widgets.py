@@ -2,6 +2,8 @@
 import logging
 import os.path
 import random
+import threading
+import time
 
 from xdg import IconTheme
 
@@ -85,15 +87,18 @@ class AppGrid(QtWidgets.QScrollArea):
 class AppLauncher(QtWidgets.QWidget):
     """App launcher widget."""
     clicked = QtCore.Signal(QtGui.QMouseEvent)
+    mount_app_launcher_signal = QtCore.Signal(object)
 
     def __init__(self, desktop_file: DesktopFile, *args, **kwargs):
         """Class constructor."""
         super().__init__(*args, **kwargs)
         self.desktop_file = desktop_file
 
-        # Style
+        # Self setting
         self.set_contents_margins(0, 0, 0, 0)
         self.set_fixed_height(150)
+
+        # Style
         self.bg_color_red, self.bg_color_green, self.bg_color_blue = (
             random.randint(50, 200),
             random.randint(50, 200),
@@ -109,77 +114,96 @@ class AppLauncher(QtWidgets.QWidget):
             f'{self.bg_color_green}, '
             f'{self.bg_color_blue}, 0.1)')
 
-        # Main layout
-        self.layout = QtWidgets.QVBoxLayout()
-        self.layout.set_contents_margins(0, 0, 0, 0)
-        self.layout.set_spacing(0)
-        self.set_layout(self.layout)
+        # Main layout and container
+        self.main_layout = QtWidgets.QVBoxLayout()
+        self.main_layout.set_contents_margins(0, 0, 0, 0)
+        self.main_layout.set_spacing(0)
+        self.set_layout(self.main_layout)
 
-        self.widget_container = QtWidgets.QWidget()
-        self.widget_container.set_style_sheet(self.style_sheet)
-        self.layout.add_widget(self.widget_container)
+        self.main_container = QtWidgets.QWidget()
+        self.main_container.set_style_sheet(self.style_sheet)
+        self.main_layout.add_widget(self.main_container)
 
-        self.layout_container = QtWidgets.QVBoxLayout()
-        self.layout_container.set_contents_margins(0, 30, 0, 0)
-        self.widget_container.set_layout(self.layout_container)
+        # Body layout
+        self.body_layout = QtWidgets.QVBoxLayout()
+        self.body_layout.set_contents_margins(0, 30, 0, 0)
+        self.main_container.set_layout(self.body_layout)
 
+        # Accent
+        self.bottom_highlight_line = QtWidgets.QWidget()
+        self.main_layout.add_widget(self.bottom_highlight_line)
+
+        # Connect signal to render: fg
+        self.mount_app_launcher_signal.connect(
+            self.mount_app_launcher_fg_thread)
+
+        # Thread: bg
+        self.mount_app_launcher_thread = threading.Thread(
+            target=self.mount_app_launcher_bg_thread)
+        self.mount_app_launcher_thread.start()
+
+    @QtCore.Slot()
+    def mount_app_launcher_bg_thread(self):
+        time.sleep(0.01)
+        self.mount_app_launcher_signal.emit(0)
+
+    @QtCore.Slot()
+    def mount_app_launcher_fg_thread(self):
         # Icon
+        icon_view = QtWidgets.QLabel()
         if 'Icon' in self.desktop_file.content['[Desktop Entry]']:
-            self.icon_path = IconTheme.getIconPath(
+            icon_path = IconTheme.getIconPath(
                 iconname=self.desktop_file.content['[Desktop Entry]']['Icon'],
                 size=48,
                 theme='breeze',
                 extensions=['png', 'svg', 'xpm'])
             try:
-                self.pixmap = QtGui.QPixmap(self.icon_path)
+                pixmap = QtGui.QPixmap(icon_path)
             except Exception as err:
                 logging.error(err)
-                self.pixmap = QtGui.QPixmap(os.path.join(
+                pixmap = QtGui.QPixmap(os.path.join(
                     os.path.abspath(os.path.dirname(__file__)),
                     'static/defaultapp.svg'))
 
-            self.scaled_pixmap = self.pixmap.scaled(
+            scaled_pixmap = pixmap.scaled(
                 48, 48, QtCore.Qt.KeepAspectRatio)
-            self.icon_view = QtWidgets.QLabel(self)
-            self.icon_view.set_style_sheet('background-color: transparent;')
-            self.icon_view.set_size_policy(
-                QtWidgets.QSizePolicy.Expanding,
-                QtWidgets.QSizePolicy.Expanding)
-            self.icon_view.set_pixmap(self.scaled_pixmap)
-            self.icon_view.set_alignment(QtCore.Qt.AlignCenter)
-            self.layout_container.add_widget(self.icon_view)
+            icon_view.set_pixmap(scaled_pixmap)
+
+        icon_view.set_alignment(QtCore.Qt.AlignCenter)
+        icon_view.set_style_sheet('background-color: transparent;')
+        icon_view.set_size_policy(
+            QtWidgets.QSizePolicy.Expanding,
+            QtWidgets.QSizePolicy.Expanding)
+        self.body_layout.add_widget(icon_view)
 
         # Name
-        self.app_name_layout = QtWidgets.QHBoxLayout()
-        self.app_name_layout.set_contents_margins(0, 0, 0, 30)
-        self.layout_container.add_layout(self.app_name_layout)
-
-        self.app_name = ElidedLabel()
-        self.app_name.set_alignment(
+        app_name_layout = QtWidgets.QHBoxLayout()
+        app_name_layout.set_contents_margins(0, 0, 0, 30)
+        app_name = ElidedLabel()
+        app_name.set_alignment(
             QtCore.Qt.AlignTop | QtCore.Qt.AlignHCenter)
-        self.app_name.set_text(
+        app_name.set_text(
             self.desktop_file.content['[Desktop Entry]']['Name'])
-        self.app_name.set_style_sheet('background-color: transparent;')
-        self.app_name.set_fixed_width(100)
-        self.app_name_layout.add_widget(self.app_name)
+        app_name.set_style_sheet('background-color: transparent;')
+        app_name.set_fixed_width(100)
+        app_name_layout.add_widget(app_name)
+        self.body_layout.add_layout(app_name_layout)
 
         # Accent
-        self.accent_widget = QtWidgets.QWidget()
-        self.accent_widget.set_style_sheet(self.style_sheet)
-        self.accent_widget.set_fixed_height(5)
-        self.layout.add_widget(self.accent_widget)
+        self.bottom_highlight_line.set_style_sheet(self.style_sheet)
+        self.bottom_highlight_line.set_fixed_height(5)
 
     def enter_event(self, event):
         """..."""
-        self.widget_container.set_style_sheet(self.style_sheet_hover)
-        self.accent_widget.set_style_sheet(
+        self.main_container.set_style_sheet(self.style_sheet_hover)
+        self.bottom_highlight_line.set_style_sheet(
             'background-color: rgba(255, 255, 255, 0.3);')
         event.ignore()
 
     def leave_event(self, event):
         """..."""
-        self.widget_container.set_style_sheet(self.style_sheet)
-        self.accent_widget.set_style_sheet(self.style_sheet)
+        self.main_container.set_style_sheet(self.style_sheet)
+        self.bottom_highlight_line.set_style_sheet(self.style_sheet)
         event.ignore()
 
     @QtCore.Slot()
