@@ -21,6 +21,7 @@ class AppGrid(QtWidgets.QScrollArea):
             self,
             desktop_file_list: list,
             columns_num: int = 5,
+            title: str = None,
             *args, **kwargs):
         """Class constructor.
 
@@ -30,6 +31,7 @@ class AppGrid(QtWidgets.QScrollArea):
         super().__init__(*args, **kwargs)
         self.desktop_file_list = desktop_file_list
         self.columns_num = columns_num
+        self.title = title
 
         # Style
         self.set_alignment(QtCore.Qt.AlignTop)
@@ -42,15 +44,22 @@ class AppGrid(QtWidgets.QScrollArea):
         self.set_widget_resizable(True)  # ScrollBarAlwaysOn
 
         # Main layout
-        self.widget = QtWidgets.QWidget()
-        self.widget.set_contents_margins(0, 0, 0, 0)
-        self.set_widget(self.widget)
+        self.main_container = QtWidgets.QWidget()
+        self.main_container.set_contents_margins(0, 0, 0, 0)
+        self.set_widget(self.main_container)
 
-        self.layout_container = QtWidgets.QVBoxLayout()
-        self.layout_container.set_alignment(QtCore.Qt.AlignTop)
-        self.layout_container.set_contents_margins(0, 0, 0, 0)
-        self.layout_container.set_spacing(0)
-        self.widget.set_layout(self.layout_container)
+        self.main_layout = QtWidgets.QVBoxLayout()
+        self.main_layout.set_alignment(QtCore.Qt.AlignTop)
+        self.main_layout.set_contents_margins(0, 0, 0, 0)
+        self.main_layout.set_spacing(0)
+        self.main_container.set_layout(self.main_layout)
+
+        # Title
+        if self.title:
+            self.title = QtWidgets.QLabel(self.title)
+            self.title.set_alignment(QtCore.Qt.AlignHCenter)
+            self.title.set_style_sheet('font-size: 24px;')
+            self.main_layout.add_widget(self.title)
 
         # Grid creation
         self.line_layout = None
@@ -60,7 +69,7 @@ class AppGrid(QtWidgets.QScrollArea):
                 self.line_layout.set_alignment(QtCore.Qt.AlignTop)
                 self.line_layout.set_contents_margins(0, 0, 0, 0)
                 self.line_layout.set_spacing(0)
-                self.layout_container.add_layout(self.line_layout)
+                self.main_layout.add_layout(self.line_layout)
 
             app_launcher = AppLauncher(desktop_file)
             app_launcher.clicked.connect(self.app_launcher_was_clicked)
@@ -76,7 +85,7 @@ class AppGrid(QtWidgets.QScrollArea):
                 app_launcher.clicked.connect(self.app_launcher_was_clicked)
                 self.line_layout.add_widget(app_launcher)
 
-        self.layout_container.add_stretch(1)
+        self.main_layout.add_stretch(1)
 
     @QtCore.Slot()
     def app_launcher_was_clicked(self, widget):
@@ -144,11 +153,13 @@ class AppLauncher(QtWidgets.QWidget):
 
     @QtCore.Slot()
     def mount_app_launcher_bg_thread(self):
+        """..."""
         time.sleep(0.01)
         self.mount_app_launcher_signal.emit(0)
 
     @QtCore.Slot()
     def mount_app_launcher_fg_thread(self):
+        """..."""
         # Icon
         icon_view = QtWidgets.QLabel()
         if 'Icon' in self.desktop_file.content['[Desktop Entry]']:

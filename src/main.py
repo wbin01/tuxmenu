@@ -46,6 +46,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @QtCore.Slot()
     def set_custom_style(self):
+        """..."""
         style_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), 'static/style.qss')
         with open(style_path, 'r') as f:
@@ -54,24 +55,29 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @QtCore.Slot()
     def mount_app_grid_bg_thread(self):
+        """..."""
         time.sleep(0.05)
         self.mount_app_grid_signal.emit(0)
 
     @QtCore.Slot()
     def mount_app_grid_fg_thread(self):
+        """..."""
         menu_schema = attachments.MenuSchema()
         desktop_files_items = menu_schema.schema['All']
         desktop_files_items.sort()
 
         if desktop_files_items:
             app_grid = widgets.AppGrid(
-                desktop_file_list=desktop_files_items, columns_num=6)
+                desktop_file_list=desktop_files_items,
+                columns_num=6,
+                title='All')
             app_grid.set_alignment(QtCore.Qt.AlignTop)
             app_grid.clicked.connect(self.app_launcher_was_clicked)
             self.app_grid_layout.add_widget(app_grid)
 
     @QtCore.Slot()
     def app_launcher_was_clicked(self, widget):
+        """..."""
         print(widget)
         if str(widget) != '<GhostAppLauncher: Boo>':
             print(widget.desktop_file.content['[Desktop Entry]']['Name'])
