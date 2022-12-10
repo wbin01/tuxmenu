@@ -39,12 +39,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.app_grid_layout.set_alignment(QtCore.Qt.AlignTop)
         self.layout_container.add_layout(self.app_grid_layout)
 
-        w = QtWidgets.QWidget()
-        w.set_size_policy(
-            QtWidgets.QSizePolicy.Expanding,
-            QtWidgets.QSizePolicy.Expanding)
-        self.layout_container.add_widget(w)
-
         self.mount_app_grid_signal.connect(self.mount_app_grid_fg_thread)
         self.mount_app_grid_thread = threading.Thread(
             target=self.mount_app_grid_bg_thread)
@@ -70,7 +64,7 @@ class MainWindow(QtWidgets.QMainWindow):
         all_menu_desktop_files.sort()
 
         app_grid = widgets.AppGrid(
-            desktop_file_list=all_menu_desktop_files, columns_num=5)
+            desktop_file_list=all_menu_desktop_files, columns_num=6)
         app_grid.set_alignment(QtCore.Qt.AlignTop)
         app_grid.clicked.connect(self.app_launcher_was_clicked)
         self.app_grid_layout.add_widget(app_grid)

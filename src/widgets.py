@@ -92,7 +92,6 @@ class AppLauncher(QtWidgets.QWidget):
         self.set_contents_margins(0, 0, 0, 0)
         self.set_fixed_height(150)
         # self.set_attribute(QtCore.Qt.WA_TranslucentBackground)
-        # border-radius: 5px;
         self.set_style_sheet(f'background-color: rgba({self.bg_color}0.05)')
 
         # Main layout
@@ -182,11 +181,15 @@ class GhostAppLauncher(QtWidgets.QWidget):
     def __init__(self, *args, **kwargs):
         """Class constructor."""
         super().__init__(*args, **kwargs)
+        # self.set_attribute(QtCore.Qt.WA_TranslucentBackground)
+        # self.set_style_sheet('background: transparent;')
+        self.set_style_sheet('background-color: rgba(100, 100, 100, 0.05);')
+        self.set_fixed_height(150)
 
         # Main layout
         self.layout_container = QtWidgets.QVBoxLayout()
         self.layout_container.set_alignment(QtCore.Qt.AlignCenter)
-        self.layout_container.set_contents_margins(0, 0, 0, 0)
+        self.layout_container.set_contents_margins(1, 1, 1, 1)
         self.layout_container.set_spacing(0)
         self.set_layout(self.layout_container)
 
@@ -208,9 +211,6 @@ class GhostAppLauncher(QtWidgets.QWidget):
         self.app_name = QtWidgets.QLabel()
         self.app_name.set_text(' ')
         self.app_name.set_alignment(QtCore.Qt.AlignHCenter)
-
-        self.set_attribute(QtCore.Qt.WA_TranslucentBackground)
-        self.set_style_sheet('background: transparent;')
 
     @QtCore.Slot()
     def mouse_press_event(self, event):
