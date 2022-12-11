@@ -20,7 +20,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """Class constructor."""
         super().__init__(*args, **kwargs)
         self.__set_custom_style()
-        self.app_grid_columns_num = 6
+        self.app_grid_columns_num = 5
         self.recent_apps = attachments.SavedApps(config_name='recent-apps')
         self.favorite_apps = attachments.SavedApps(config_name='favorite-apps')
 
@@ -76,7 +76,7 @@ class MainWindow(QtWidgets.QMainWindow):
     @QtCore.Slot()
     def __mount_recent_apps_grid(self):
         # Mount recent app grid
-        apps = self.recent_apps.apps
+        apps = self.recent_apps.apps[:self.app_grid_columns_num]
 
         if not apps:
             menu_schema = attachments.MenuSchema()
@@ -112,7 +112,8 @@ class MainWindow(QtWidgets.QMainWindow):
         page_layout.add_widget(title)
 
         # App grid
-        app_grid = widgets.AppGrid(desktop_file_list=apps, columns_num=6)
+        app_grid = widgets.AppGrid(
+            desktop_file_list=apps, columns_num=self.app_grid_columns_num)
         app_grid.clicked.connect(
             lambda widget: self.__on_app_launcher_was_clicked_signal(
                 widget))
@@ -185,13 +186,14 @@ class MainWindow(QtWidgets.QMainWindow):
     def __on_app_launcher_was_clicked_signal(self, widget):
         # When the app is clicked, this method is triggered
         if str(widget) != '<GhostAppLauncher: Boo>':
+            # Save app in "Recents"
             if widget.desktop_file in self.recent_apps.apps:
                 self.recent_apps.apps.remove(widget.desktop_file)
-                self.recent_apps.apps.append(widget.desktop_file)
-
+            else:
+                self.recent_apps.apps.pop()
             self.recent_apps.apps.insert(0, widget.desktop_file)
             self.recent_apps.save_apps(
-                url_list_apps=[x.url for x in self.recent_apps.apps[:-1]])
+                url_list_apps=[x.url for x in self.recent_apps.apps])
         self.close()
 
 
