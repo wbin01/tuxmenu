@@ -3,6 +3,7 @@
 #   www.freedesktop.org/wiki/Specifications/
 #   www.freedesktop.org/wiki/Specifications/basedir-spec/
 #   www.freedesktop.org/wiki/Specifications/desktop-entry-spec/
+import json
 import os
 import re
 import subprocess
@@ -318,6 +319,51 @@ class MenuSchema(object):
                             self.__schema[categ].append(desktop_file)
 
 
-if __name__ == '__main__':
-    d = DesktopFile('/usr/share/applications/blender.desktop')
-    print(d.content)
+class SavedApps(object):
+    """..."""
+    def __init__(self, config_name: str):
+        """..."""
+        self.config_name = config_name
+        self.__config_dirname = 'tuxmenu'
+        self.__config_filename = self.config_name + '.json'
+
+        self.__config_dir_path = (
+            os.path.join(os.environ['HOME'], '.config', self.__config_dirname))
+
+        self.__config_file_path = (
+            os.path.join(
+                self.__config_dir_path,
+                self.__config_filename))
+
+        self.__apps = self.__load_apps()
+
+    @property
+    def apps(self) -> list:
+        """..."""
+        return self.__apps
+
+    def __load_apps(self) -> list:
+        """..."""
+        if not os.path.isdir(self.__config_dir_path):
+            os.makedirs(self.__config_dir_path)
+
+        if not os.path.isfile(self.__config_file_path):
+            return []
+
+        with open(self.__config_file_path, 'r') as f:
+            json_data = json.load(f)
+
+        urls = []
+        if json_data[self.config_name]:
+            for url in json_data[self.config_name]:
+                urls.append(DesktopFile(url=url))
+
+        return urls
+
+    def save_app(self, url_app: str) -> None:
+        """..."""
+        self.apps.insert(0, url_app)
+        json_data = {self.config_name: self.apps}
+
+        with open(self.__config_file_path, 'w') as f:
+            json.dump(json_data, f)

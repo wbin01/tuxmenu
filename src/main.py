@@ -20,6 +20,9 @@ class MainWindow(QtWidgets.QMainWindow):
         """Class constructor."""
         super().__init__(*args, **kwargs)
         self.__set_custom_style()
+        self.app_grid_columns_num = 6
+        self.recent_apps = attachments.SavedApps(config_name='recent-apps')
+        self.favorite_apps = attachments.SavedApps(config_name='favorite-apps')
 
         # Main container
         self.main_container = QtWidgets.QWidget()
@@ -53,6 +56,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.app_grid_stacked_layout.set_alignment(QtCore.Qt.AlignTop)
         self.app_pagination_layout.add_layout(self.app_grid_stacked_layout)
 
+        self.__mount_recent_apps_grid()
+
         # Thread
         self.mount_app_grid_signal.connect(self.__mount_app_grid)
         self.mount_app_grid_thread = threading.Thread(
@@ -69,6 +74,51 @@ class MainWindow(QtWidgets.QMainWindow):
             self.set_style_sheet(_style)
 
     @QtCore.Slot()
+    def __mount_recent_apps_grid(self):
+        # Mount recent app grid
+        apps = self.recent_apps.apps
+
+        if not apps:
+            menu_schema = attachments.MenuSchema()
+            menu_schema.schema['All'].sort()
+            apps = menu_schema.schema['All'][:self.app_grid_columns_num]
+
+        # Category buttons pagination
+        category_button = widgets.CategoryButton(text='Recent')
+        setattr(category_button, 'page_index', 0)
+        category_button.set_check_state(state=True)
+        self.active_category_button = category_button
+        category_button.clicked.connect(self.__on_category_button)
+        self.category_buttons_layout.add_widget(category_button)
+
+        # Apps page
+        page = QtWidgets.QWidget()
+        page.set_contents_margins(0, 0, 0, 0)
+        page.set_style_sheet('background: transparent;')
+        self.app_grid_stacked_layout.add_widget(page)
+
+        page_layout = QtWidgets.QVBoxLayout()
+        page_layout.set_contents_margins(0, 0, 0, 0)
+        page_layout.set_spacing(0)
+        page.set_layout(page_layout)
+
+        # Title
+        title = QtWidgets.QLabel(f'Recent apps')
+        title.set_contents_margins(0, 0, 0, 0)
+        title.set_alignment(QtCore.Qt.AlignHCenter)
+        title.set_style_sheet(
+            'background: transparent; font-size: 24px;')
+        page_layout.add_widget(title)
+
+        # App grid
+        app_grid = widgets.AppGrid(desktop_file_list=apps, columns_num=6)
+        app_grid.clicked.connect(
+            lambda widget: self.__on_app_launcher_was_clicked_signal(
+                widget))
+        app_grid.set_alignment(QtCore.Qt.AlignTop)
+        page_layout.add_widget(app_grid)
+
+    @QtCore.Slot()
     def __mount_app_grid_thread(self):
         # Wait for the main window to render to assemble the app grid
         time.sleep(0.05)
@@ -78,7 +128,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def __mount_app_grid(self):
         # Mount app grid
         menu_schema = attachments.MenuSchema()
-        page_index = 0
+        page_index = 1
         for categ, apps in menu_schema.schema.items():
             if not apps:
                 continue
@@ -109,9 +159,11 @@ class MainWindow(QtWidgets.QMainWindow):
             page_layout.add_widget(title)
 
             # App grid
-            app_grid = widgets.AppGrid(desktop_file_list=apps, columns_num=6)
+            app_grid = widgets.AppGrid(
+                desktop_file_list=apps, columns_num=self.app_grid_columns_num)
             app_grid.clicked.connect(
-                lambda widget: self.__on_app_launcher_was_clicked_signal(widget))
+                lambda widget: self.__on_app_launcher_was_clicked_signal(
+                    widget))
             app_grid.set_alignment(QtCore.Qt.AlignTop)
             page_layout.add_widget(app_grid)
 

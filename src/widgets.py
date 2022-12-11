@@ -67,8 +67,12 @@ class AppGrid(QtWidgets.QScrollArea):
     @QtCore.Slot()
     def __mount_app_launcher_thread(self) -> None:
         # Wait for the widget to render to assemble the app launcher
-        time.sleep(0.07)
-        self.mount_app_launcher_signal.emit(0)
+        if len(self.desktop_file_list) < 10:
+            time.sleep(0.01)
+            self.mount_app_launcher_signal.emit(0)
+        else:
+            time.sleep(0.07)
+            self.mount_app_launcher_signal.emit(0)
 
     @QtCore.Slot()
     def __mount_app_launcher(self) -> None:
@@ -81,7 +85,11 @@ class AppGrid(QtWidgets.QScrollArea):
                 self.line_layout.set_spacing(0)
                 self.main_layout.add_layout(self.line_layout)
 
-            app_launcher = AppLauncher(desktop_file)
+            if len(self.desktop_file_list) < 7:
+                app_launcher = AppLauncher(
+                    desktop_file=desktop_file, no_thread=True)
+            else:
+                app_launcher = AppLauncher(desktop_file=desktop_file)
             app_launcher.clicked.connect(
                 self.__on_app_launcher_was_clicked_signal)
             self.line_layout.add_widget(app_launcher)
@@ -113,10 +121,13 @@ class AppLauncher(QtWidgets.QWidget):
     clicked = QtCore.Signal(object)
     mount_app_launcher_signal = QtCore.Signal(object)
 
-    def __init__(self, desktop_file: DesktopFile, *args, **kwargs) -> None:
+    def __init__(
+            self, desktop_file: DesktopFile, no_thread: bool = False,
+            *args, **kwargs) -> None:
         """Class constructor."""
         super().__init__(*args, **kwargs)
         self.desktop_file = desktop_file
+        self.no_thread = no_thread
 
         # Self setting
         self.set_contents_margins(0, 0, 0, 0)
@@ -158,12 +169,15 @@ class AppLauncher(QtWidgets.QWidget):
         self.main_layout.add_widget(self.bottom_highlight_line)
 
         # Mount app laucher body (icon, name)
-        self.mount_app_launcher_thread = threading.Thread(
-            target=self.__mount_app_launcher_thread)
-        self.mount_app_launcher_thread.start()
+        if self.no_thread:
+            self.__mount_app_launcher()
+        else:
+            self.mount_app_launcher_signal.connect(
+                self.__mount_app_launcher)
 
-        self.mount_app_launcher_signal.connect(
-            self.__mount_app_launcher)
+            self.mount_app_launcher_thread = threading.Thread(
+                target=self.__mount_app_launcher_thread)
+            self.mount_app_launcher_thread.start()
 
     @QtCore.Slot()
     def __mount_app_launcher_thread(self) -> None:
