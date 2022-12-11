@@ -82,6 +82,7 @@ class MainWindow(QtWidgets.QMainWindow):
             menu_schema = attachments.MenuSchema()
             menu_schema.schema['All'].sort()
             apps = menu_schema.schema['All'][:self.app_grid_columns_num]
+            self.recent_apps.apps = apps
 
         # Category buttons pagination
         category_button = widgets.CategoryButton(text='Recent')
@@ -183,9 +184,14 @@ class MainWindow(QtWidgets.QMainWindow):
     @QtCore.Slot()
     def __on_app_launcher_was_clicked_signal(self, widget):
         # When the app is clicked, this method is triggered
-        print(widget)
         if str(widget) != '<GhostAppLauncher: Boo>':
-            print(widget.desktop_file.url)
+            if widget.desktop_file in self.recent_apps.apps:
+                self.recent_apps.apps.remove(widget.desktop_file)
+                self.recent_apps.apps.append(widget.desktop_file)
+
+            self.recent_apps.apps.insert(0, widget.desktop_file)
+            self.recent_apps.save_apps(
+                url_list_apps=[x.url for x in self.recent_apps.apps[:-1]])
         self.close()
 
 

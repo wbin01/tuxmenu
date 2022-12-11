@@ -342,6 +342,11 @@ class SavedApps(object):
         """..."""
         return self.__apps
 
+    @apps.setter
+    def apps(self, app_list: list) -> None:
+        """..."""
+        self.__apps = app_list
+
     def __load_apps(self) -> list:
         """..."""
         if not os.path.isdir(self.__config_dir_path):
@@ -360,10 +365,7 @@ class SavedApps(object):
 
         return urls
 
-    def save_app(self, url_app: str) -> None:
+    def save_apps(self, url_list_apps: list) -> None:
         """..."""
-        self.apps.insert(0, url_app)
-        json_data = {self.config_name: self.apps}
-
         with open(self.__config_file_path, 'w') as f:
-            json.dump(json_data, f)
+            json.dump({self.config_name: url_list_apps}, f)
