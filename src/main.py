@@ -29,16 +29,31 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Main layout
         self.layout_container = QtWidgets.QVBoxLayout()
+        self.layout_container.set_contents_margins(0, 0, 0, 0)
         self.layout_container.set_alignment(QtCore.Qt.AlignTop)
         self.layout_container.set_spacing(0)
         self.main_container.set_layout(self.layout_container)
 
-        # App launcher
-        self.app_grid_layout = QtWidgets.QVBoxLayout()
-        self.app_grid_layout.set_spacing(0)
-        self.app_grid_layout.set_alignment(QtCore.Qt.AlignTop)
-        self.layout_container.add_layout(self.app_grid_layout)
+        # App pagination layout
+        self.app_pagination_layout = QtWidgets.QHBoxLayout()
+        self.app_pagination_layout.set_contents_margins(0, 0, 0, 0)
+        self.app_pagination_layout.set_spacing(0)
+        self.app_pagination_layout.set_alignment(QtCore.Qt.AlignTop)
+        self.layout_container.add_layout(self.app_pagination_layout)
 
+        self.category_buttons_layout = QtWidgets.QVBoxLayout()
+        self.category_buttons_layout.set_contents_margins(0, 0, 0, 0)
+        self.category_buttons_layout.set_spacing(0)
+        self.category_buttons_layout.set_alignment(QtCore.Qt.AlignTop)
+        self.app_pagination_layout.add_layout(self.category_buttons_layout)
+
+        self.app_grid_stacked_layout = QtWidgets.QStackedLayout()
+        self.app_grid_stacked_layout.set_contents_margins(0, 0, 0, 0)
+        self.app_grid_stacked_layout.set_spacing(0)
+        self.app_grid_stacked_layout.set_alignment(QtCore.Qt.AlignTop)
+        self.app_pagination_layout.add_layout(self.app_grid_stacked_layout)
+
+        # Thread
         self.mount_app_grid_signal.connect(self.mount_app_grid_fg_thread)
         self.mount_app_grid_thread = threading.Thread(
             target=self.mount_app_grid_bg_thread)
@@ -67,20 +82,49 @@ class MainWindow(QtWidgets.QMainWindow):
         desktop_files_items = menu_schema.schema['Multimedia']
         desktop_files_items.sort()
 
-        # Title
-        title = QtWidgets.QLabel(f'All apps {len(desktop_files_items)}')
-        title.set_alignment(QtCore.Qt.AlignHCenter)
-        title.set_style_sheet('background: transparent; font-size: 24px;')
-        self.app_grid_layout.add_widget(title)
+        # Mount grid
+        page_index = 0
+        for categ, apps in menu_schema.schema.items():
+            if not apps:
+                continue
+            # Category buttons pagination
+            category_button = QtWidgets.QPushButton(categ)
+            setattr(category_button, 'page_index', page_index)
+            category_button.clicked.connect(self.on_category_button)
+            self.category_buttons_layout.add_widget(category_button)
 
-        # App grid
-        if desktop_files_items:
-            app_grid = widgets.AppGrid(
-                desktop_file_list=desktop_files_items,
-                columns_num=6)
+            # Apps page
+            page = QtWidgets.QWidget()
+            page.set_contents_margins(0, 0, 0, 0)
+            page.set_style_sheet('background: transparent;')
+            self.app_grid_stacked_layout.add_widget(page)
+
+            page_layout = QtWidgets.QVBoxLayout()
+            page_layout.set_contents_margins(0, 0, 0, 0)
+            page_layout.set_spacing(0)
+            page.set_layout(page_layout)
+
+            # Title
+            title = QtWidgets.QLabel(f'{categ} {len(apps)}')
+            title.set_contents_margins(0, 0, 0, 0)
+            title.set_alignment(QtCore.Qt.AlignHCenter)
+            title.set_style_sheet('background: transparent; font-size: 24px;')
+            page_layout.add_widget(title)
+
+            # App grid
+            app_grid = widgets.AppGrid(desktop_file_list=apps, columns_num=6)
+            app_grid.clicked_signal.connect(
+                lambda widget: self.app_launcher_was_clicked(widget))
             app_grid.set_alignment(QtCore.Qt.AlignTop)
-            app_grid.clicked.connect(self.app_launcher_was_clicked)
-            self.app_grid_layout.add_widget(app_grid)
+            page_layout.add_widget(app_grid)
+
+            page_index += 1
+
+    @QtCore.Slot()
+    def on_category_button(self):
+        """..."""
+        self.app_grid_stacked_layout.set_current_index(
+            self.sender().page_index)
 
     @QtCore.Slot()
     def app_launcher_was_clicked(self, widget):

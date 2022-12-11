@@ -317,13 +317,5 @@ class MenuSchema(object):
 
 
 if __name__ == '__main__':
-    # import locale
-    # m = MenuSchema()
-    # for cat, apps in m.schema.items():
-    #     print(f'{cat}: {len(apps)}')
-    #     if apps:
-    #         apps.sort()
-    #         for i in apps:
-    #             print('\t', i)
-    #     print()
-    pass
+    d = DesktopFile('/usr/share/applications/blender.desktop')
+    print(d.content)

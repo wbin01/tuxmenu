@@ -1,4 +1,5 @@
 #!/usr/bin env python3
+import locale
 import logging
 import os.path
 import random
@@ -15,7 +16,7 @@ from attachments import DesktopFile, MenuSchema
 
 class AppGrid(QtWidgets.QScrollArea):
     """App launcher grid widget."""
-    clicked = QtCore.Signal(QtGui.QMouseEvent)
+    clicked_signal = QtCore.Signal(QtGui.QMouseEvent)
 
     def __init__(
             self,
@@ -81,7 +82,7 @@ class AppGrid(QtWidgets.QScrollArea):
     @QtCore.Slot()
     def app_launcher_was_clicked(self, widget):
         """..."""
-        self.clicked.emit(widget)
+        self.clicked_signal.emit(widget)
 
 
 class AppLauncher(QtWidgets.QWidget):
@@ -184,8 +185,7 @@ class AppLauncher(QtWidgets.QWidget):
         app_name = ElidedLabel()
         app_name.set_alignment(
             QtCore.Qt.AlignTop | QtCore.Qt.AlignHCenter)
-        app_name.set_text(
-            self.desktop_file.content['[Desktop Entry]']['Name'])
+        app_name.set_text(self.desktop_file.content['[Desktop Entry]']['Name'])
         app_name.set_style_sheet('background-color: transparent;')
         app_name.set_fixed_width(100)
         app_name_layout.add_widget(app_name)
@@ -200,6 +200,15 @@ class AppLauncher(QtWidgets.QWidget):
         self.main_container.set_style_sheet(self.style_sheet_hover)
         self.bottom_highlight_line.set_style_sheet(
             'background-color: rgba(255, 255, 255, 0.3);')
+        # Generic name to send
+        local_name = f'GenericName[{locale.getdefaultlocale()[0]}]'
+        if local_name in self.desktop_file.content['[Desktop Entry]']:
+            name = self.desktop_file.content['[Desktop Entry]'][local_name]
+        elif 'GenericName' in self.desktop_file.content['[Desktop Entry]']:
+            name = self.desktop_file.content['[Desktop Entry]']['GenericName']
+        else:
+            name = self.desktop_file.content['[Desktop Entry]']['Name']
+        logging.info(name)
         event.ignore()
 
     def leave_event(self, event):
