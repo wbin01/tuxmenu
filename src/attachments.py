@@ -278,20 +278,22 @@ class MenuSchema(object):
 
                 if desktop_entry['Type'] != 'Application':
                     desktop_file_is_valid = False
-                if ('NoDisplay' in desktop_entry and
+                elif ('NoDisplay' in desktop_entry and
                         desktop_entry['NoDisplay'] == 'true'):
                     desktop_file_is_valid = False
-                if ('Hidden' in desktop_entry and
+                elif ('Hidden' in desktop_entry and
                         desktop_entry['Hidden'] == 'true'):
                     desktop_file_is_valid = False
-                if 'OnlyShowIn' in desktop_entry:
-                    desktop_file_is_valid = False
-                    if desk_env in desktop_entry['OnlyShowIn'].split(';'):
-                        desktop_file_is_valid = True
-                if 'NotShowIn' in desktop_entry:
-                    desktop_file_is_valid = True
-                    if desk_env in desktop_entry['NotShowIn'].split(';'):
+                else:
+                    if 'OnlyShowIn' in desktop_entry:
                         desktop_file_is_valid = False
+                        if desk_env in desktop_entry['OnlyShowIn'].split(';'):
+                            desktop_file_is_valid = True
+
+                    if 'NotShowIn' in desktop_entry:
+                        desktop_file_is_valid = True
+                        if desk_env in desktop_entry['NotShowIn'].split(';'):
+                            desktop_file_is_valid = False
 
             # Check categories and save in correct category
             if desktop_file_is_valid:

@@ -77,16 +77,13 @@ class MainWindow(QtWidgets.QMainWindow):
     @QtCore.Slot()
     def mount_app_grid_fg_thread(self):
         """..."""
-        # Menu schema
-        menu_schema = attachments.MenuSchema()
-        desktop_files_items = menu_schema.schema['Multimedia']
-        desktop_files_items.sort()
-
         # Mount grid
+        menu_schema = attachments.MenuSchema()
         page_index = 0
         for categ, apps in menu_schema.schema.items():
             if not apps:
                 continue
+            apps.sort()
             # Category buttons pagination
             category_button = widgets.CategoryButton(text=categ)
             setattr(category_button, 'page_index', page_index)
@@ -105,12 +102,12 @@ class MainWindow(QtWidgets.QMainWindow):
             page.set_layout(page_layout)
 
             # Title
-            # title = QtWidgets.QLabel(f'{categ} {len(apps)}')
-            # title.set_contents_margins(0, 0, 0, 0)
-            # title.set_alignment(QtCore.Qt.AlignHCenter)
-            # title.set_style_sheet(
-            #     'background: transparent; font-size: 24px;')
-            # page_layout.add_widget(title)
+            title = QtWidgets.QLabel(f'{categ} {len(apps)}')
+            title.set_contents_margins(0, 0, 0, 0)
+            title.set_alignment(QtCore.Qt.AlignHCenter)
+            title.set_style_sheet(
+                'background: transparent; font-size: 24px;')
+            page_layout.add_widget(title)
 
             # App grid
             app_grid = widgets.AppGrid(desktop_file_list=apps, columns_num=6)
@@ -137,7 +134,8 @@ class MainWindow(QtWidgets.QMainWindow):
         """..."""
         print(widget)
         if str(widget) != '<GhostAppLauncher: Boo>':
-            print(widget.desktop_file.content['[Desktop Entry]']['Name'])
+            # print(widget.desktop_file.content['[Desktop Entry]']['Name'])
+            print(widget.desktop_file.url)
         self.close()
 
 
