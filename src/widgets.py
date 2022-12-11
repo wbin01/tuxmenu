@@ -308,18 +308,28 @@ class CategoryButton(QtWidgets.QWidget):
         self.main_layout.set_spacing(0)
         self.set_layout(self.main_layout)
 
+        self.main_container = QtWidgets.QWidget()
+        self.main_container.set_contents_margins(0, 0, 0, 0)
+        self.main_container.set_style_sheet('background: transparent;')
+        self.main_layout.add_widget(self.main_container)
+
+        self.body_layout = QtWidgets.QVBoxLayout()
+        self.body_layout.set_contents_margins(0, 0, 0, 0)
+        self.body_layout.set_spacing(0)
+        self.main_container.set_layout(self.body_layout)
+
         self.text = QtWidgets.QLabel(self.text)
         self.text.set_contents_margins(5, 10, 5, 10)
         self.text.set_style_sheet("""
             background: transparent;
             font-size: 18px;""")
-        self.main_layout.add_widget(self.text)
+        self.body_layout.add_widget(self.text)
 
         # Accent
         self.bottom_highlight_line = QtWidgets.QWidget()
-        self.bottom_highlight_line.set_fixed_height(5)
+        self.bottom_highlight_line.set_fixed_height(3)
         self.bottom_highlight_line.set_style_sheet('background: transparent;')
-        self.main_layout.add_widget(self.bottom_highlight_line)
+        self.body_layout.add_widget(self.bottom_highlight_line)
 
     @QtCore.Slot()
     def check_state(self) -> bool:
@@ -331,14 +341,13 @@ class CategoryButton(QtWidgets.QWidget):
         """..."""
         self.state = state
         if state:
-            self.text.set_style_sheet("""
-                background-color: rgba(255, 255, 255, 0.05);
-                font-size: 18px;""")
+            self.main_container.set_style_sheet("""
+                background-color: rgba(255, 255, 255, 0.1);""")
             self.bottom_highlight_line.set_style_sheet("""
                 background-color: rgba(255, 255, 255, 0.3);""")
         else:
-            self.text.set_style_sheet("""
-                background: transparent; font-size: 18px;""")
+            self.main_container.set_style_sheet("""
+                background: transparent;""")
             self.bottom_highlight_line.set_style_sheet("""
                 background: transparent;""")
 
@@ -353,15 +362,14 @@ class CategoryButton(QtWidgets.QWidget):
     def enter_event(self, event) -> None:
         """..."""
         if not self.state:
-            self.text.set_style_sheet("""
-                background-color: rgba(255, 255, 255, 0.05);
-                font-size: 18px;""")
+            self.main_container.set_style_sheet("""
+                background-color: rgba(255, 255, 255, 0.05);""")
         event.ignore()
 
     @QtCore.Slot()
     def leave_event(self, event) -> None:
         """..."""
         if not self.state:
-            self.text.set_style_sheet("""
-                background: transparent; font-size: 18px;""")
+            self.main_container.set_style_sheet("""
+                background: transparent;""")
         event.ignore()
