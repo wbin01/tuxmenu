@@ -44,7 +44,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.category_buttons_layout = QtWidgets.QVBoxLayout()
         self.category_buttons_layout.set_contents_margins(0, 0, 0, 0)
         self.category_buttons_layout.set_spacing(0)
-        self.category_buttons_layout.set_alignment(QtCore.Qt.AlignTop)
+        self.category_buttons_layout.set_alignment(QtCore.Qt.AlignCenter)
         self.app_pagination_layout.add_layout(self.category_buttons_layout)
 
         self.app_grid_stacked_layout = QtWidgets.QStackedLayout()
@@ -105,11 +105,12 @@ class MainWindow(QtWidgets.QMainWindow):
             page.set_layout(page_layout)
 
             # Title
-            title = QtWidgets.QLabel(f'{categ} {len(apps)}')
-            title.set_contents_margins(0, 0, 0, 0)
-            title.set_alignment(QtCore.Qt.AlignHCenter)
-            title.set_style_sheet('background: transparent; font-size: 24px;')
-            page_layout.add_widget(title)
+            # title = QtWidgets.QLabel(f'{categ} {len(apps)}')
+            # title.set_contents_margins(0, 0, 0, 0)
+            # title.set_alignment(QtCore.Qt.AlignHCenter)
+            # title.set_style_sheet(
+            #     'background: transparent; font-size: 24px;')
+            # page_layout.add_widget(title)
 
             # App grid
             app_grid = widgets.AppGrid(desktop_file_list=apps, columns_num=6)
@@ -169,8 +170,8 @@ class Application(object):
             QtCore.Qt.WA_TranslucentBackground)
         GlobalBlur(self.application_window.win_id(), Dark=True, QWidget=self)
 
-        # Show
-        self.application_window.show_maximized()  # .show_full_screen() .show()
+        # Show | show_maximized show_full_screen show
+        self.application_window.show_maximized()
         sys.exit(self.application.exec())
 
 

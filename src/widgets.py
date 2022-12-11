@@ -17,6 +17,7 @@ from attachments import DesktopFile, MenuSchema
 class AppGrid(QtWidgets.QScrollArea):
     """App launcher grid widget."""
     clicked_signal = QtCore.Signal(QtGui.QMouseEvent)
+    mount_app_launcher_signal = QtCore.Signal(object)
 
     def __init__(
             self,
@@ -55,6 +56,25 @@ class AppGrid(QtWidgets.QScrollArea):
 
         # Grid creation
         self.line_layout = None
+
+        # Connect signal to render: fg
+        self.mount_app_launcher_signal.connect(
+            self.mount_app_launcher_fg_thread)
+
+        # Thread: bg
+        mount_app_launcher_thread = threading.Thread(
+            target=self.mount_app_launcher_bg_thread)
+        mount_app_launcher_thread.start()
+
+    @QtCore.Slot()
+    def mount_app_launcher_bg_thread(self) -> None:
+        """..."""
+        time.sleep(0.07)
+        self.mount_app_launcher_signal.emit(0)
+
+    @QtCore.Slot()
+    def mount_app_launcher_fg_thread(self) -> None:
+        """..."""
         for num, desktop_file in enumerate(self.desktop_file_list):
             if num % self.columns_num == 0:
                 self.line_layout = QtWidgets.QHBoxLayout()
@@ -146,7 +166,7 @@ class AppLauncher(QtWidgets.QWidget):
     @QtCore.Slot()
     def mount_app_launcher_bg_thread(self) -> None:
         """..."""
-        time.sleep(0.01)
+        time.sleep(0.1)
         self.mount_app_launcher_signal.emit(0)
 
     @QtCore.Slot()
