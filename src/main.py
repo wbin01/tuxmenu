@@ -19,7 +19,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         """Class constructor."""
         super().__init__(*args, **kwargs)
-        self.set_custom_style()
+        self.__set_custom_style()
 
         # Main container
         self.main_container = QtWidgets.QWidget()
@@ -54,14 +54,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.app_pagination_layout.add_layout(self.app_grid_stacked_layout)
 
         # Thread
-        self.mount_app_grid_signal.connect(self.mount_app_grid_fg_thread)
+        self.mount_app_grid_signal.connect(self.__mount_app_grid)
         self.mount_app_grid_thread = threading.Thread(
-            target=self.mount_app_grid_bg_thread)
+            target=self.__mount_app_grid_thread)
         self.mount_app_grid_thread.start()
 
     @QtCore.Slot()
-    def set_custom_style(self):
-        """..."""
+    def __set_custom_style(self):
+        # Adds CSS styling to the main window
         style_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), 'static/style.qss')
         with open(style_path, 'r') as f:
@@ -69,15 +69,14 @@ class MainWindow(QtWidgets.QMainWindow):
             self.set_style_sheet(_style)
 
     @QtCore.Slot()
-    def mount_app_grid_bg_thread(self):
-        """..."""
+    def __mount_app_grid_thread(self):
+        # Wait for the main window to render to assemble the app grid
         time.sleep(0.05)
         self.mount_app_grid_signal.emit(0)
 
     @QtCore.Slot()
-    def mount_app_grid_fg_thread(self):
-        """..."""
-        # Mount grid
+    def __mount_app_grid(self):
+        # Mount app grid
         menu_schema = attachments.MenuSchema()
         page_index = 0
         for categ, apps in menu_schema.schema.items():
@@ -87,7 +86,7 @@ class MainWindow(QtWidgets.QMainWindow):
             # Category buttons pagination
             category_button = widgets.CategoryButton(text=categ)
             setattr(category_button, 'page_index', page_index)
-            category_button.clicked.connect(self.on_category_button)
+            category_button.clicked.connect(self.__on_category_button)
             self.category_buttons_layout.add_widget(category_button)
 
             # Apps page
@@ -111,16 +110,16 @@ class MainWindow(QtWidgets.QMainWindow):
 
             # App grid
             app_grid = widgets.AppGrid(desktop_file_list=apps, columns_num=6)
-            app_grid.clicked_signal.connect(
-                lambda widget: self.app_launcher_was_clicked(widget))
+            app_grid.clicked.connect(
+                lambda widget: self.__on_app_launcher_was_clicked_signal(widget))
             app_grid.set_alignment(QtCore.Qt.AlignTop)
             page_layout.add_widget(app_grid)
 
             page_index += 1
 
     @QtCore.Slot()
-    def on_category_button(self):
-        """..."""
+    def __on_category_button(self):
+        # Active category button state (highlight fixed)
         if self.active_category_button:
             self.active_category_button.set_check_state(state=False)
         self.sender().set_check_state(state=True)
@@ -130,11 +129,10 @@ class MainWindow(QtWidgets.QMainWindow):
             self.sender().page_index)
 
     @QtCore.Slot()
-    def app_launcher_was_clicked(self, widget):
-        """..."""
+    def __on_app_launcher_was_clicked_signal(self, widget):
+        # When the app is clicked, this method is triggered
         print(widget)
         if str(widget) != '<GhostAppLauncher: Boo>':
-            # print(widget.desktop_file.content['[Desktop Entry]']['Name'])
             print(widget.desktop_file.url)
         self.close()
 
