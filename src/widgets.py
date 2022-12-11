@@ -22,7 +22,7 @@ class AppGrid(QtWidgets.QScrollArea):
             self,
             desktop_file_list: list,
             columns_num: int = 5,
-            *args, **kwargs):
+            *args, **kwargs) -> None:
         """Class constructor.
 
         :param desktop_file_list: [DesktopFile, DesktopFile]
@@ -80,7 +80,7 @@ class AppGrid(QtWidgets.QScrollArea):
         self.main_layout.add_stretch(1)
 
     @QtCore.Slot()
-    def app_launcher_was_clicked(self, widget):
+    def app_launcher_was_clicked(self, widget) -> None:
         """..."""
         self.clicked_signal.emit(widget)
 
@@ -90,7 +90,7 @@ class AppLauncher(QtWidgets.QWidget):
     clicked = QtCore.Signal(QtGui.QMouseEvent)
     mount_app_launcher_signal = QtCore.Signal(object)
 
-    def __init__(self, desktop_file: DesktopFile, *args, **kwargs):
+    def __init__(self, desktop_file: DesktopFile, *args, **kwargs) -> None:
         """Class constructor."""
         super().__init__(*args, **kwargs)
         self.desktop_file = desktop_file
@@ -144,13 +144,13 @@ class AppLauncher(QtWidgets.QWidget):
         self.mount_app_launcher_thread.start()
 
     @QtCore.Slot()
-    def mount_app_launcher_bg_thread(self):
+    def mount_app_launcher_bg_thread(self) -> None:
         """..."""
         time.sleep(0.01)
         self.mount_app_launcher_signal.emit(0)
 
     @QtCore.Slot()
-    def mount_app_launcher_fg_thread(self):
+    def mount_app_launcher_fg_thread(self) -> None:
         """..."""
         # Icon
         icon_view = QtWidgets.QLabel()
@@ -195,7 +195,8 @@ class AppLauncher(QtWidgets.QWidget):
         self.bottom_highlight_line.set_style_sheet(self.style_sheet)
         self.bottom_highlight_line.set_fixed_height(5)
 
-    def enter_event(self, event):
+    @QtCore.Slot()
+    def enter_event(self, event) -> None:
         """..."""
         self.main_container.set_style_sheet(self.style_sheet_hover)
         self.bottom_highlight_line.set_style_sheet(
@@ -211,14 +212,15 @@ class AppLauncher(QtWidgets.QWidget):
         logging.info(name)
         event.ignore()
 
-    def leave_event(self, event):
+    @QtCore.Slot()
+    def leave_event(self, event) -> None:
         """..."""
         self.main_container.set_style_sheet(self.style_sheet)
         self.bottom_highlight_line.set_style_sheet(self.style_sheet)
         event.ignore()
 
     @QtCore.Slot()
-    def mouse_press_event(self, event):
+    def mouse_press_event(self, event) -> None:
         """..."""
         if event.button() == QtCore.Qt.LeftButton:
             self.clicked.emit(self)
@@ -232,7 +234,7 @@ class GhostAppLauncher(QtWidgets.QWidget):
     """App launcher widget."""
     clicked = QtCore.Signal(QtGui.QMouseEvent)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         """Class constructor."""
         super().__init__(*args, **kwargs)
         # self.set_attribute(QtCore.Qt.WA_TranslucentBackground)
@@ -267,7 +269,7 @@ class GhostAppLauncher(QtWidgets.QWidget):
         self.app_name.set_alignment(QtCore.Qt.AlignHCenter)
 
     @QtCore.Slot()
-    def mouse_press_event(self, event):
+    def mouse_press_event(self, event) -> None:
         """..."""
         if event.button() == QtCore.Qt.LeftButton:
             self.clicked.emit(self)
@@ -279,7 +281,8 @@ class GhostAppLauncher(QtWidgets.QWidget):
 
 class ElidedLabel(QtWidgets.QLabel):
     """..."""
-    def paint_event(self, event):
+    @QtCore.Slot()
+    def paint_event(self, event) -> None:
         """..."""
         painter = QtGui.QPainter(self)
         metrics = QtGui.QFontMetrics(self.font())
@@ -287,4 +290,78 @@ class ElidedLabel(QtWidgets.QLabel):
             self.text(), QtCore.Qt.ElideRight, self.width())
         painter.draw_text(self.rect(), self.alignment(), elided)
 
+        event.ignore()
+
+
+class CategoryButton(QtWidgets.QWidget):
+    """..."""
+    clicked = QtCore.Signal(object)
+
+    def __init__(self, text: str = ' ', *args, **kwargs) -> None:
+        """Class constructor."""
+        super().__init__(*args, **kwargs)
+        self.text = text
+        self.state = False
+
+        self.main_layout = QtWidgets.QVBoxLayout()
+        self.main_layout.set_contents_margins(0, 0, 0, 0)
+        self.main_layout.set_spacing(0)
+        self.set_layout(self.main_layout)
+
+        self.text = QtWidgets.QLabel(self.text)
+        self.text.set_contents_margins(5, 10, 5, 10)
+        self.text.set_style_sheet("""
+            background: transparent;
+            font-size: 18px;""")
+        self.main_layout.add_widget(self.text)
+
+        # Accent
+        self.bottom_highlight_line = QtWidgets.QWidget()
+        self.bottom_highlight_line.set_fixed_height(5)
+        self.bottom_highlight_line.set_style_sheet('background: transparent;')
+        self.main_layout.add_widget(self.bottom_highlight_line)
+
+    @QtCore.Slot()
+    def check_state(self) -> bool:
+        """..."""
+        return self.state
+
+    @QtCore.Slot()
+    def set_check_state(self, state: bool) -> None:
+        """..."""
+        self.state = state
+        if state:
+            self.text.set_style_sheet("""
+                background-color: rgba(255, 255, 255, 0.05);
+                font-size: 18px;""")
+            self.bottom_highlight_line.set_style_sheet("""
+                background-color: rgba(255, 255, 255, 0.3);""")
+        else:
+            self.text.set_style_sheet("""
+                background: transparent; font-size: 18px;""")
+            self.bottom_highlight_line.set_style_sheet("""
+                background: transparent;""")
+
+    @QtCore.Slot()
+    def mouse_press_event(self, event) -> None:
+        """..."""
+        if event.button() == QtCore.Qt.LeftButton:
+            self.clicked.emit(self)
+            event.ignore()
+
+    @QtCore.Slot()
+    def enter_event(self, event) -> None:
+        """..."""
+        if not self.state:
+            self.text.set_style_sheet("""
+                background-color: rgba(255, 255, 255, 0.05);
+                font-size: 18px;""")
+        event.ignore()
+
+    @QtCore.Slot()
+    def leave_event(self, event) -> None:
+        """..."""
+        if not self.state:
+            self.text.set_style_sheet("""
+                background: transparent; font-size: 18px;""")
         event.ignore()

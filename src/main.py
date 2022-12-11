@@ -19,7 +19,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         """Class constructor."""
         super().__init__(*args, **kwargs)
-        # CSS
         self.set_custom_style()
 
         # Main container
@@ -41,6 +40,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.app_pagination_layout.set_alignment(QtCore.Qt.AlignTop)
         self.layout_container.add_layout(self.app_pagination_layout)
 
+        self.category_button_active_state = None
         self.category_buttons_layout = QtWidgets.QVBoxLayout()
         self.category_buttons_layout.set_contents_margins(0, 0, 0, 0)
         self.category_buttons_layout.set_spacing(0)
@@ -88,7 +88,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if not apps:
                 continue
             # Category buttons pagination
-            category_button = QtWidgets.QPushButton(categ)
+            category_button = widgets.CategoryButton(text=categ)
             setattr(category_button, 'page_index', page_index)
             category_button.clicked.connect(self.on_category_button)
             self.category_buttons_layout.add_widget(category_button)
@@ -123,6 +123,11 @@ class MainWindow(QtWidgets.QMainWindow):
     @QtCore.Slot()
     def on_category_button(self):
         """..."""
+        if self.category_button_active_state:
+            self.category_button_active_state.set_check_state(state=False)
+        self.sender().set_check_state(state=True)
+        self.category_button_active_state = self.sender()
+
         self.app_grid_stacked_layout.set_current_index(
             self.sender().page_index)
 
