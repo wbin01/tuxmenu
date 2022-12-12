@@ -17,6 +17,7 @@ from attachments import DesktopFile, MenuSchema
 class AppGrid(QtWidgets.QScrollArea):
     """App launcher grid widget."""
     clicked = QtCore.Signal(QtGui.QMouseEvent)
+    enter_event_signal = QtCore.Signal(object)
     mount_app_launcher_signal = QtCore.Signal(object)
 
     def __init__(
@@ -98,6 +99,8 @@ class AppGrid(QtWidgets.QScrollArea):
                 app_launcher = AppLauncher(desktop_file=desktop_file)
             app_launcher.clicked.connect(
                 self.__on_app_launcher_was_clicked_signal)
+            app_launcher.enter_event_signal.connect(
+                self.__on_launcher_enter_event_has_triggered_signal)
             self.line_layout.add_widget(app_launcher)
 
         # Complete grid line
@@ -136,6 +139,11 @@ class AppGrid(QtWidgets.QScrollArea):
         # When the app is clicked, this method is triggered
         self.clicked.emit(widget)
 
+    @QtCore.Slot()
+    def __on_launcher_enter_event_has_triggered_signal(self, widget) -> None:
+        # When the app is clicked, this method is triggered
+        self.enter_event_signal.emit(widget)
+
 
 class AppLauncher(QtWidgets.QWidget):
     """App launcher widget.
@@ -143,6 +151,8 @@ class AppLauncher(QtWidgets.QWidget):
     Displays the application to launch.
     """
     clicked = QtCore.Signal(object)
+    right_clicked = QtCore.Signal(object)
+    enter_event_signal = QtCore.Signal(object)
     mount_app_launcher_signal = QtCore.Signal(object)
 
     def __init__(
@@ -267,15 +277,17 @@ class AppLauncher(QtWidgets.QWidget):
         self.bottom_highlight_line.set_style_sheet(
             'background-color: rgba(255, 255, 255, 0.3);')
         # Generic name to send
-        local_name = f'GenericName[{locale.getdefaultlocale()[0]}]'
-        if local_name in self.desktop_file.content['[Desktop Entry]']:
-            name = self.desktop_file.content['[Desktop Entry]'][local_name]
-        elif 'GenericName' in self.desktop_file.content['[Desktop Entry]']:
-            name = self.desktop_file.content['[Desktop Entry]']['GenericName']
-        else:
-            name = self.desktop_file.content['[Desktop Entry]']['Name']
-        logging.info(name)
-        event.ignore()
+        # local_name = f'GenericName[{locale.getdefaultlocale()[0]}]'
+        # if local_name in self.desktop_file.content['[Desktop Entry]']:
+        #     name = self.desktop_file.content['[Desktop Entry]'][local_name]
+        # elif 'GenericName' in self.desktop_file.content['[Desktop Entry]']:
+        #     name = self.desktop_file.content['[Desktop Entry]']
+        #     ['GenericName']
+        # else:
+        #     name = self.desktop_file.content['[Desktop Entry]']['Name']
+
+        self.enter_event_signal.emit(self)
+        # event.ignore()
 
     @QtCore.Slot()
     def leave_event(self, event) -> None:
@@ -295,6 +307,9 @@ class AppLauncher(QtWidgets.QWidget):
         """
         if event.button() == QtCore.Qt.LeftButton:
             self.clicked.emit(self)
+        elif event.button() == QtCore.Qt.RightButton:
+            print(self.desktop_file, 'Right click')
+            self.right_clicked.emit(self)
 
     def __str__(self) -> str:
         return str(self.desktop_file)

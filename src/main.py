@@ -116,7 +116,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Category buttons pagination
         pagination_button = widgets.CategoryButton(
-            text='Recents',
+            text='Favorite',
             icon_name='preferences-desktop-default-applications')
         setattr(pagination_button, 'page_index', 0)
         pagination_button.set_check_state(state=True)
@@ -139,6 +139,9 @@ class MainWindow(QtWidgets.QMainWindow):
             empty_lines=1)
         app_grid.clicked.connect(
             lambda widget: self.__on_app_launcher_was_clicked_signal(
+                widget))
+        app_grid.enter_event_signal.connect(
+            lambda widget: self.__on_app_launcher_enter_event_signal(
                 widget))
         app_grid.set_alignment(QtCore.Qt.AlignTop)
         self.home_page_layout.add_widget(app_grid, 4)
@@ -163,6 +166,9 @@ class MainWindow(QtWidgets.QMainWindow):
             empty_lines=2)
         app_grid.clicked.connect(
             lambda widget: self.__on_app_launcher_was_clicked_signal(
+                widget))
+        app_grid.enter_event_signal.connect(
+            lambda widget: self.__on_app_launcher_enter_event_signal(
                 widget))
         app_grid.set_alignment(QtCore.Qt.AlignTop)
         self.home_page_layout.add_widget(app_grid, 6)
@@ -214,6 +220,9 @@ class MainWindow(QtWidgets.QMainWindow):
             app_grid.clicked.connect(
                 lambda widget: self.__on_app_launcher_was_clicked_signal(
                     widget))
+            app_grid.enter_event_signal.connect(
+                lambda widget: self.__on_app_launcher_enter_event_signal(
+                    widget))
             app_grid.set_alignment(QtCore.Qt.AlignTop)
             page_layout.add_widget(app_grid)
 
@@ -264,6 +273,10 @@ class MainWindow(QtWidgets.QMainWindow):
             self.recent_apps.save_apps(
                 url_list_apps=[x.url for x in self.recent_apps.apps])
         self.close()
+
+    @QtCore.Slot()
+    def __on_app_launcher_enter_event_signal(self, widget):
+        print(widget)
 
 
 class Application(object):
