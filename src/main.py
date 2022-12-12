@@ -93,7 +93,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Category buttons pagination
         pagination_button = widgets.CategoryButton(
-            text='Recents')
+            text='Recents',
+            icon_name='preferences-desktop-default-applications')
         setattr(pagination_button, 'page_index', 0)
         pagination_button.set_check_state(state=True)
         self.active_category_button = pagination_button
@@ -158,7 +159,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 continue
             apps.sort()
             # Category buttons pagination
-            category_button = widgets.CategoryButton(text=categ)
+            category_button = widgets.CategoryButton(
+                text=categ, icon_name=menu_schema.icons_schema[categ])
             setattr(category_button, 'page_index', page_index)
             category_button.clicked.connect(self.__on_category_button)
             self.category_buttons_layout.add_widget(category_button)

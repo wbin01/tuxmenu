@@ -247,7 +247,24 @@ class MenuSchema(object):
             'Multimedia': [], 'AudioVideo': [], 'Audio': [], 'Video': [],
             'Game': [], 'Graphics': [], 'Network': [], 'Office': [],
             'Settings': [], 'System': [], 'Utility': [], 'Others': []}
+        self.__icons_schema = {
+            'All': 'applications-all',
+            'Development': 'applications-development',
+            'Education': 'applications-education',
+            'Multimedia': 'applications-multimedia',
+            'AudioVideo': 'applications-other', 'Audio': 'applications-other',
+            'Video': 'applications-other', 'Game': 'applications-games.svg',
+            'Graphics': 'applications-graphics',
+            'Network': 'applications-network', 'Office': 'applications-office',
+            'Settings': 'preferences', 'System': 'applications-system',
+            'Utility': 'applications-utilities', 'Others': 'applications-other'
+        }
         self.update_schema()
+
+    @property
+    def icons_schema(self) -> dict:
+        """..."""
+        return self.__icons_schema
 
     @property
     def schema(self) -> dict:

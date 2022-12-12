@@ -219,7 +219,7 @@ class AppLauncher(QtWidgets.QWidget):
             icon_path = IconTheme.getIconPath(
                 iconname=self.desktop_file.content['[Desktop Entry]']['Icon'],
                 size=48,
-                theme='breeze',
+                theme='breeze-dark',
                 extensions=['png', 'svg', 'xpm'])
             try:
                 pixmap = QtGui.QPixmap(icon_path)
@@ -381,10 +381,13 @@ class CategoryButton(QtWidgets.QWidget):
     """
     clicked = QtCore.Signal(object)
 
-    def __init__(self, text: str = ' ', *args, **kwargs) -> None:
+    def __init__(
+            self, text: str = '...', icon_name: str = None,
+            *args, **kwargs) -> None:
         """Class constructor."""
         super().__init__(*args, **kwargs)
         self.text = text
+        self.icon_name = icon_name
         self.state = False
 
         self.main_layout = QtWidgets.QVBoxLayout()
@@ -402,12 +405,46 @@ class CategoryButton(QtWidgets.QWidget):
         self.body_layout.set_spacing(0)
         self.main_container.set_layout(self.body_layout)
 
+        # Icon and Text layout
+        self.text_layout = QtWidgets.QHBoxLayout()
+        self.text_layout.set_alignment(
+            QtCore.Qt.AlignLeft | QtCore.Qt.AlignCenter)
+        self.text_layout.set_contents_margins(10, 0, 30, 0)
+        self.text_layout.set_spacing(0)
+        self.body_layout.add_layout(self.text_layout)
+
+        ###
+        # Icon
+        if self.icon_name:
+            icon_view = QtWidgets.QLabel()
+            icon_path = IconTheme.getIconPath(
+                iconname=self.icon_name,
+                size=48,
+                theme='breeze-dark',
+                extensions=['png', 'svg', 'xpm'])
+            try:
+                pixmap = QtGui.QPixmap(icon_path)
+            except Exception as err:
+                logging.error(err)
+                pixmap = QtGui.QPixmap(os.path.join(
+                    os.path.abspath(os.path.dirname(__file__)),
+                    'static/defaultapp.svg'))
+
+            scaled_pixmap = pixmap.scaled(
+                32, 32, QtCore.Qt.KeepAspectRatio)
+            icon_view.set_pixmap(scaled_pixmap)
+
+            icon_view.set_alignment(
+                QtCore.Qt.AlignLeft | QtCore.Qt.AlignCenter)
+            icon_view.set_style_sheet('background-color: transparent;')
+            self.text_layout.add_widget(icon_view)
+
         self.text = QtWidgets.QLabel(self.text)
-        self.text.set_contents_margins(5, 10, 5, 10)
+        self.text.set_contents_margins(20, 10, 5, 10)
         self.text.set_style_sheet("""
             background: transparent;
             font-size: 18px;""")
-        self.body_layout.add_widget(self.text)
+        self.text_layout.add_widget(self.text)
 
         # Accent
         self.bottom_highlight_line = QtWidgets.QWidget()
