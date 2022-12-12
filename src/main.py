@@ -320,7 +320,7 @@ class MainWindow(QtWidgets.QMainWindow):
             ': ' + generic_name
             if generic_name and generic_name != name else '')
 
-        text = f'{name}{generic_name}{coment}'
+        text = f'{name.strip(":").strip(".")}{generic_name}{coment}'
         self.status_bar.set_text(text)
 
     @QtCore.Slot()

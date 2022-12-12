@@ -316,6 +316,29 @@ class AppLauncher(QtWidgets.QWidget):
             print(self.desktop_file, 'Right click')
             self.right_clicked.emit(self)
 
+    def paint_event(self, event):
+        img_path = None
+        if 'snapd' in self.desktop_file.url:
+            img_path = os.path.join(
+                os.path.abspath(os.path.dirname(__file__)),
+                'static/snap.svg')
+        elif 'flatpak' in self.desktop_file.url:
+            img_path = os.path.join(
+                os.path.abspath(os.path.dirname(__file__)),
+                'static/flatpak.svg')
+        elif 'AppImage' in self.desktop_file.content[
+                '[Desktop Entry]']['Exec']:
+            img_path = os.path.join(
+                os.path.abspath(os.path.dirname(__file__)),
+                'static/appimage.svg')
+
+        if img_path:
+            pixmap = QtGui.QPixmap(img_path)
+            painter = QtGui.QPainter(self)
+            painter.draw_pixmap(QtCore.QPoint(10, 10), pixmap)
+
+        event.ignore()
+
     def __str__(self) -> str:
         return str(self.desktop_file)
 
@@ -450,7 +473,7 @@ class CategoryButton(QtWidgets.QWidget):
                     'static/defaultapp.svg'))
 
             scaled_pixmap = pixmap.scaled(
-                32, 32, QtCore.Qt.KeepAspectRatio)
+                22, 22, QtCore.Qt.KeepAspectRatio)
             icon_view.set_pixmap(scaled_pixmap)
 
             icon_view.set_alignment(
