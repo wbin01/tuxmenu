@@ -589,3 +589,22 @@ class EnergyButton(QtWidgets.QWidget):
         """
         self.icon_view.set_style_sheet('background: transparent;')
         event.ignore()
+
+
+class SearchApps(QtWidgets.QLineEdit):
+    """..."""
+    def __init__(self, *args, **kwargs):
+        """..."""
+        super().__init__(*args, **kwargs)
+        self.set_style_sheet("""
+            color: #AAA;
+            font-size: 20px;
+            background-color: rgba(0, 0, 0, 0);
+            border: 0px;""")
+
+    def mouse_press_event(self, event):
+        """..."""
+        logging.info(self)
+        if (event.button() == QtCore.Qt.LeftButton
+                or event.button() == QtCore.Qt.RightButton):
+            app.quit()

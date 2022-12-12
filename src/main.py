@@ -33,6 +33,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.layout_container.set_spacing(0)
         self.main_container.set_layout(self.layout_container)
 
+        # Search
+        self.search_input = widgets.SearchApps()
+        self.search_input.set_read_only(True)
+        self.search_input.set_alignment(QtCore.Qt.AlignCenter)
+        self.layout_container.add_widget(self.search_input)
+
         # App pagination layout
         self.app_pagination_layout = QtWidgets.QHBoxLayout()
         self.app_pagination_layout.set_contents_margins(0, 0, 0, 0)
@@ -60,6 +66,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.home_page_layout = QtWidgets.QVBoxLayout()
         self.home_page_layout.set_contents_margins(0, 0, 0, 0)
         self.home_page_layout.set_spacing(0)
+        self.home_page_layout.set_alignment(QtCore.Qt.AlignTop)
 
         self.home_page_container = QtWidgets.QWidget()
         self.home_page_container.set_contents_margins(0, 0, 0, 0)
@@ -104,6 +111,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.shutdown_button = widgets.EnergyButton('system-shutdown')
         self.energy_buttons_layout.add_widget(self.shutdown_button)
 
+        # Status bar
+        self.status_bar = QtWidgets.QLabel(' ')
+        self.status_bar.set_contents_margins(250, 10, 100, 15)
+        self.status_bar.set_style_sheet('background: transparent;')
+        self.layout_container.add_widget(self.status_bar)
+
     @QtCore.Slot()
     def __set_custom_style(self):
         # Adds CSS styling to the main window
@@ -130,7 +143,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Title
         title = QtWidgets.QLabel('Recent apps')
         title.set_contents_margins(0, 10, 0, 10)
-        title.set_alignment(QtCore.Qt.AlignHCenter)
+        title.set_alignment(QtCore.Qt.AlignLeft)
         title.set_style_sheet(
             'background: transparent; font-size: 24px;')
         self.home_page_layout.add_widget(title)
@@ -144,7 +157,8 @@ class MainWindow(QtWidgets.QMainWindow):
             lambda widget: self.__on_app_launcher_was_clicked_signal(
                 widget))
         app_grid.set_alignment(QtCore.Qt.AlignTop)
-        self.home_page_layout.add_widget(app_grid)
+        self.home_page_layout.add_widget(app_grid, 4)
+        # self.home_page_layout.add_stretch(1)
 
     @QtCore.Slot()
     def __mount_favorite_apps_grid(self):
@@ -153,7 +167,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Title
         title = QtWidgets.QLabel('Favorite')
         title.set_contents_margins(0, 10, 0, 10)
-        title.set_alignment(QtCore.Qt.AlignHCenter)
+        title.set_alignment(QtCore.Qt.AlignLeft)
         title.set_style_sheet(
             'background: transparent; font-size: 24px;')
         self.home_page_layout.add_widget(title)
@@ -167,7 +181,7 @@ class MainWindow(QtWidgets.QMainWindow):
             lambda widget: self.__on_app_launcher_was_clicked_signal(
                 widget))
         app_grid.set_alignment(QtCore.Qt.AlignTop)
-        self.home_page_layout.add_widget(app_grid)
+        self.home_page_layout.add_widget(app_grid, 6)
 
     @QtCore.Slot()
     def __mount_app_grid_thread(self):
@@ -205,7 +219,7 @@ class MainWindow(QtWidgets.QMainWindow):
             # Title
             title = QtWidgets.QLabel(categ)
             title.set_contents_margins(0, 10, 0, 10)
-            title.set_alignment(QtCore.Qt.AlignHCenter)
+            title.set_alignment(QtCore.Qt.AlignLeft)
             title.set_style_sheet(
                 'background: transparent; font-size: 24px;')
             page_layout.add_widget(title)
