@@ -14,7 +14,7 @@ import widgets
 
 class MainWindow(QtWidgets.QMainWindow):
     """App window instance."""
-    mount_app_grid_signal = QtCore.Signal(object)
+    mount_body_signal = QtCore.Signal(object)
 
     def __init__(self, *args, **kwargs):
         """Class constructor."""
@@ -35,7 +35,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Search
         self.search_input = widgets.SearchApps()
-        self.search_input.set_read_only(True)
+        self.search_input.set_contents_margins(50, 0, 50, 0)
+        self.search_input.set_placeholder_text('Type to search')
+        # self.search_input.set_read_only(True)
         self.search_input.set_alignment(QtCore.Qt.AlignCenter)
         self.layout_container.add_widget(self.search_input)
 
@@ -60,7 +62,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.app_grid_stacked_layout.set_alignment(QtCore.Qt.AlignTop)
         self.app_pagination_layout.add_layout(self.app_grid_stacked_layout)
 
-        # Mount Home page grids
+        # Home grid page
         self.app_grid_columns = 5
 
         self.home_page_layout = QtWidgets.QVBoxLayout()
@@ -80,36 +82,18 @@ class MainWindow(QtWidgets.QMainWindow):
         self.favorite_apps = attachments.SavedApps(config_name='favorite-apps')
         self.__mount_favorite_apps_grid()
 
-        # Grid thread
-        self.mount_app_grid_signal.connect(self.__mount_app_grid)
-        self.mount_app_grid_thread = threading.Thread(
-            target=self.__mount_app_grid_thread)
-        self.mount_app_grid_thread.start()
-
-        # Energy buttons
+        # Energy buttons layout
         self.energy_buttons_layout = QtWidgets.QVBoxLayout()
         self.energy_buttons_layout.set_contents_margins(10, 0, 10, 0)
         self.energy_buttons_layout.set_spacing(10)
         self.energy_buttons_layout.set_alignment(QtCore.Qt.AlignCenter)
         self.app_pagination_layout.add_layout(self.energy_buttons_layout)
 
-        self.lock_screen_button = widgets.EnergyButton('system-lock-screen')
-        self.energy_buttons_layout.add_widget(self.lock_screen_button)
-
-        self.log_out_button = widgets.EnergyButton('system-log-out')
-        self.energy_buttons_layout.add_widget(self.log_out_button)
-
-        self.system_suspend_button = widgets.EnergyButton('system-suspend')
-        self.energy_buttons_layout.add_widget(self.system_suspend_button)
-
-        self.switch_user_button = widgets.EnergyButton('system-switch-user')
-        self.energy_buttons_layout.add_widget(self.switch_user_button)
-
-        self.reboot_button = widgets.EnergyButton('system-reboot')
-        self.energy_buttons_layout.add_widget(self.reboot_button)
-
-        self.shutdown_button = widgets.EnergyButton('system-shutdown')
-        self.energy_buttons_layout.add_widget(self.shutdown_button)
+        # Grid pages thread
+        self.mount_body_signal.connect(self.__mount_body)
+        self.mount_body_thread = threading.Thread(
+            target=self.__mount_body_thread)
+        self.mount_body_thread.start()
 
         # Status bar
         self.status_bar = QtWidgets.QLabel(' ')
@@ -184,13 +168,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.home_page_layout.add_widget(app_grid, 6)
 
     @QtCore.Slot()
-    def __mount_app_grid_thread(self):
+    def __mount_body_thread(self):
         # Wait for the main window to render to assemble the app grid
         time.sleep(0.05)
-        self.mount_app_grid_signal.emit(0)
+        self.mount_body_signal.emit(0)
 
     @QtCore.Slot()
-    def __mount_app_grid(self):
+    def __mount_body(self):
         # Mount app grid
         menu_schema = attachments.MenuSchema()
         page_index = 1
@@ -234,6 +218,25 @@ class MainWindow(QtWidgets.QMainWindow):
             page_layout.add_widget(app_grid)
 
             page_index += 1
+
+        # Energy buttons
+        self.lock_screen_button = widgets.EnergyButton('system-lock-screen')
+        self.energy_buttons_layout.add_widget(self.lock_screen_button)
+
+        self.log_out_button = widgets.EnergyButton('system-log-out')
+        self.energy_buttons_layout.add_widget(self.log_out_button)
+
+        self.system_suspend_button = widgets.EnergyButton('system-suspend')
+        self.energy_buttons_layout.add_widget(self.system_suspend_button)
+
+        # self.switch_user_button = widgets.EnergyButton('system-switch-user')
+        # self.energy_buttons_layout.add_widget(self.switch_user_button)
+
+        self.reboot_button = widgets.EnergyButton('system-reboot')
+        self.energy_buttons_layout.add_widget(self.reboot_button)
+
+        self.shutdown_button = widgets.EnergyButton('system-shutdown')
+        self.energy_buttons_layout.add_widget(self.shutdown_button)
 
     @QtCore.Slot()
     def __on_category_button(self):

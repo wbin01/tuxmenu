@@ -599,8 +599,10 @@ class SearchApps(QtWidgets.QLineEdit):
         self.set_style_sheet("""
             color: #AAA;
             font-size: 20px;
-            background-color: rgba(0, 0, 0, 0);
-            border: 0px;""")
+            background: transparent;
+            border: 0px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px;""")
 
     def mouse_press_event(self, event):
         """..."""
