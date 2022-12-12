@@ -40,6 +40,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.app_pagination_layout.set_alignment(QtCore.Qt.AlignTop)
         self.layout_container.add_layout(self.app_pagination_layout)
 
+        # Category buttons layout
         self.active_category_button = None
         self.category_buttons_layout = QtWidgets.QVBoxLayout()
         self.category_buttons_layout.set_contents_margins(0, 0, 0, 0)
@@ -72,11 +73,36 @@ class MainWindow(QtWidgets.QMainWindow):
         self.favorite_apps = attachments.SavedApps(config_name='favorite-apps')
         self.__mount_favorite_apps_grid()
 
-        # Thread
+        # Grid thread
         self.mount_app_grid_signal.connect(self.__mount_app_grid)
         self.mount_app_grid_thread = threading.Thread(
             target=self.__mount_app_grid_thread)
         self.mount_app_grid_thread.start()
+
+        # Energy buttons
+        self.energy_buttons_layout = QtWidgets.QVBoxLayout()
+        self.energy_buttons_layout.set_contents_margins(10, 0, 10, 0)
+        self.energy_buttons_layout.set_spacing(10)
+        self.energy_buttons_layout.set_alignment(QtCore.Qt.AlignCenter)
+        self.app_pagination_layout.add_layout(self.energy_buttons_layout)
+
+        self.lock_screen_button = widgets.EnergyButton('system-lock-screen')
+        self.energy_buttons_layout.add_widget(self.lock_screen_button)
+
+        self.log_out_button = widgets.EnergyButton('system-log-out')
+        self.energy_buttons_layout.add_widget(self.log_out_button)
+
+        self.system_suspend_button = widgets.EnergyButton('system-suspend')
+        self.energy_buttons_layout.add_widget(self.system_suspend_button)
+
+        self.switch_user_button = widgets.EnergyButton('system-switch-user')
+        self.energy_buttons_layout.add_widget(self.switch_user_button)
+
+        self.reboot_button = widgets.EnergyButton('system-reboot')
+        self.energy_buttons_layout.add_widget(self.reboot_button)
+
+        self.shutdown_button = widgets.EnergyButton('system-shutdown')
+        self.energy_buttons_layout.add_widget(self.shutdown_button)
 
     @QtCore.Slot()
     def __set_custom_style(self):
@@ -177,7 +203,7 @@ class MainWindow(QtWidgets.QMainWindow):
             page.set_layout(page_layout)
 
             # Title
-            title = QtWidgets.QLabel(f'{categ} {len(apps)}')
+            title = QtWidgets.QLabel(categ)
             title.set_contents_margins(0, 10, 0, 10)
             title.set_alignment(QtCore.Qt.AlignHCenter)
             title.set_style_sheet(

@@ -413,7 +413,6 @@ class CategoryButton(QtWidgets.QWidget):
         self.text_layout.set_spacing(0)
         self.body_layout.add_layout(self.text_layout)
 
-        ###
         # Icon
         if self.icon_name:
             icon_view = QtWidgets.QLabel()
@@ -504,6 +503,7 @@ class CategoryButton(QtWidgets.QWidget):
         if not self.state:
             self.main_container.set_style_sheet("""
                 background-color: rgba(255, 255, 255, 0.05);""")
+        self.clicked.emit(self)
         event.ignore()
 
     @QtCore.Slot()
@@ -515,4 +515,77 @@ class CategoryButton(QtWidgets.QWidget):
         if not self.state:
             self.main_container.set_style_sheet("""
                 background: transparent;""")
+        event.ignore()
+
+
+class EnergyButton(QtWidgets.QWidget):
+    """Button widget
+
+    A custom button to use for category pagination.
+    """
+    clicked = QtCore.Signal(object)
+
+    def __init__(self, icon_name: str, *args, **kwargs) -> None:
+        """Class constructor."""
+        super().__init__(*args, **kwargs)
+        self.icon_name = icon_name
+
+        self.main_layout = QtWidgets.QVBoxLayout()
+        self.main_layout.set_contents_margins(0, 0, 0, 0)
+        self.main_layout.set_spacing(0)
+        self.set_layout(self.main_layout)
+
+        self.icon_view = QtWidgets.QLabel()
+        self.icon_view.set_fixed_height(80)
+        self.icon_view.set_fixed_width(80)
+        self.icon_view.set_contents_margins(0, 0, 0, 0)
+        self.icon_view.set_alignment(QtCore.Qt.AlignCenter)
+        self.icon_view.set_style_sheet('background-color: transparent;')
+
+        icon_path = IconTheme.getIconPath(
+            iconname=self.icon_name,
+            size=48,
+            theme='breeze-dark',
+            extensions=['png', 'svg', 'xpm'])
+        try:
+            pixmap = QtGui.QPixmap(icon_path)
+        except Exception as err:
+            logging.error(err)
+            pixmap = QtGui.QPixmap(os.path.join(
+                os.path.abspath(os.path.dirname(__file__)),
+                'static/defaultapp.svg'))
+
+        scaled_pixmap = pixmap.scaled(
+            32, 32, QtCore.Qt.KeepAspectRatio)
+        self.icon_view.set_pixmap(scaled_pixmap)
+        self.main_layout.add_widget(self.icon_view)
+
+    @QtCore.Slot()
+    def mouse_press_event(self, event) -> None:
+        """Mouse click event on the widget.
+
+        Emits a signal that the widget has been clicked.
+        """
+        if event.button() == QtCore.Qt.LeftButton:
+            self.clicked.emit(self)
+            event.ignore()
+
+    @QtCore.Slot()
+    def enter_event(self, event) -> None:
+        """Mouse hover event
+
+        Highlight colors when mouse hovers over widget.
+        """
+        self.icon_view.set_style_sheet("""
+            border-radius: 40px;
+            background-color: rgba(255, 255, 255, 0.05);""")
+        event.ignore()
+
+    @QtCore.Slot()
+    def leave_event(self, event) -> None:
+        """Mouse-over event outside the widget
+
+        Remove highlighting colors when the mouse leaves the widget.
+        """
+        self.icon_view.set_style_sheet('background: transparent;')
         event.ignore()
