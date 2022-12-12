@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import locale
 import os
 import sys
 import threading
@@ -97,8 +98,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Status bar
         self.status_bar = QtWidgets.QLabel(' ')
-        self.status_bar.set_contents_margins(250, 10, 100, 15)
-        self.status_bar.set_style_sheet('background: transparent;')
+        self.status_bar.set_word_wrap(True)
+        self.status_bar.set_fixed_height(50)
+        self.status_bar.set_contents_margins(250, 10, 250, 5)
+        self.status_bar.set_alignment(QtCore.Qt.AlignTop)
+        self.status_bar.set_style_sheet(
+            'background: transparent; font-size: 13px;')
         self.layout_container.add_widget(self.status_bar)
 
     @QtCore.Slot()
@@ -125,8 +130,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.category_buttons_layout.add_widget(pagination_button)
 
         # Title
-        title = QtWidgets.QLabel('Recent apps')
-        title.set_contents_margins(0, 10, 0, 10)
+        title = QtWidgets.QLabel('Recent')
+        title.set_contents_margins(10, 10, 0, 10)
         title.set_alignment(QtCore.Qt.AlignLeft)
         title.set_style_sheet(
             'background: transparent; font-size: 24px;')
@@ -143,6 +148,8 @@ class MainWindow(QtWidgets.QMainWindow):
         app_grid.enter_event_signal.connect(
             lambda widget: self.__on_app_launcher_enter_event_signal(
                 widget))
+        app_grid.leave_event_signal.connect(
+            lambda _: self.__on_app_launcher_leave_event_signal())
         app_grid.set_alignment(QtCore.Qt.AlignTop)
         self.home_page_layout.add_widget(app_grid, 4)
         # self.home_page_layout.add_stretch(1)
@@ -152,12 +159,12 @@ class MainWindow(QtWidgets.QMainWindow):
         # ...
 
         # Title
-        title = QtWidgets.QLabel('Favorite')
-        title.set_contents_margins(0, 10, 0, 10)
-        title.set_alignment(QtCore.Qt.AlignLeft)
-        title.set_style_sheet(
-            'background: transparent; font-size: 24px;')
-        self.home_page_layout.add_widget(title)
+        # title = QtWidgets.QLabel('Favorite')
+        # title.set_contents_margins(10, 10, 0, 10)
+        # title.set_alignment(QtCore.Qt.AlignLeft)
+        # title.set_style_sheet(
+        #     'background: transparent; font-size: 24px;')
+        # self.home_page_layout.add_widget(title)
 
         # App grid
         app_grid = widgets.AppGrid(
@@ -170,6 +177,8 @@ class MainWindow(QtWidgets.QMainWindow):
         app_grid.enter_event_signal.connect(
             lambda widget: self.__on_app_launcher_enter_event_signal(
                 widget))
+        app_grid.leave_event_signal.connect(
+            lambda _: self.__on_app_launcher_leave_event_signal())
         app_grid.set_alignment(QtCore.Qt.AlignTop)
         self.home_page_layout.add_widget(app_grid, 6)
 
@@ -207,12 +216,12 @@ class MainWindow(QtWidgets.QMainWindow):
             page.set_layout(page_layout)
 
             # Title
-            title = QtWidgets.QLabel(categ)
-            title.set_contents_margins(0, 10, 0, 10)
-            title.set_alignment(QtCore.Qt.AlignLeft)
-            title.set_style_sheet(
-                'background: transparent; font-size: 24px;')
-            page_layout.add_widget(title)
+            # title = QtWidgets.QLabel(categ)
+            # title.set_contents_margins(10, 10, 0, 10)
+            # title.set_alignment(QtCore.Qt.AlignLeft)
+            # title.set_style_sheet(
+            #     'background: transparent; font-size: 24px;')
+            # page_layout.add_widget(title)
 
             # App grid
             app_grid = widgets.AppGrid(
@@ -223,6 +232,8 @@ class MainWindow(QtWidgets.QMainWindow):
             app_grid.enter_event_signal.connect(
                 lambda widget: self.__on_app_launcher_enter_event_signal(
                     widget))
+            app_grid.leave_event_signal.connect(
+                lambda _: self.__on_app_launcher_leave_event_signal())
             app_grid.set_alignment(QtCore.Qt.AlignTop)
             page_layout.add_widget(app_grid)
 
@@ -276,7 +287,45 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @QtCore.Slot()
     def __on_app_launcher_enter_event_signal(self, widget):
-        print(widget)
+        # Add status bar info
+        local, escope = (locale.getdefaultlocale()[0], '[Desktop Entry]')
+
+        # Name
+        name = widget.desktop_file.content[escope]['Name']
+        if f'Name[{local}]' in widget.desktop_file.content[escope]:
+            name = widget.desktop_file.content[escope][f'Name[{local}]']
+
+        # GenericName
+        generic_name = ''
+        if f'GenericName[{local}]' in widget.desktop_file.content[escope]:
+            generic_name = widget.desktop_file.content[
+                escope][f'GenericName[{local}]']
+        elif 'GenericName' in widget.desktop_file.content[escope]:
+            generic_name = widget.desktop_file.content[escope]['GenericName']
+
+        # Coment
+        coment = ''
+        if f'Comment[{local}]' in widget.desktop_file.content[escope]:
+            coment = widget.desktop_file.content[escope][f'Comment[{local}]']
+        elif 'Comment' in widget.desktop_file.content[escope]:
+            coment = widget.desktop_file.content[escope]['Comment']
+
+        # Format text
+        coment = (' | ' + coment if (
+            coment and
+            coment != name and
+            coment != generic_name) else '')
+
+        generic_name = (
+            ': ' + generic_name
+            if generic_name and generic_name != name else '')
+
+        text = f'{name}{generic_name}{coment}'
+        self.status_bar.set_text(text)
+
+    @QtCore.Slot()
+    def __on_app_launcher_leave_event_signal(self):
+        self.status_bar.set_text(' ')
 
 
 class Application(object):

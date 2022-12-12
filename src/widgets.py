@@ -1,6 +1,5 @@
 #!/usr/bin env python3
 import locale
-import logging
 import os.path
 import random
 import threading
@@ -18,6 +17,7 @@ class AppGrid(QtWidgets.QScrollArea):
     """App launcher grid widget."""
     clicked = QtCore.Signal(QtGui.QMouseEvent)
     enter_event_signal = QtCore.Signal(object)
+    leave_event_signal = QtCore.Signal(object)
     mount_app_launcher_signal = QtCore.Signal(object)
 
     def __init__(
@@ -101,6 +101,8 @@ class AppGrid(QtWidgets.QScrollArea):
                 self.__on_app_launcher_was_clicked_signal)
             app_launcher.enter_event_signal.connect(
                 self.__on_launcher_enter_event_has_triggered_signal)
+            app_launcher.leave_event_signal.connect(
+                self.__on_launcher_leave_event_has_triggered_signal)
             self.line_layout.add_widget(app_launcher)
 
         # Complete grid line
@@ -141,8 +143,13 @@ class AppGrid(QtWidgets.QScrollArea):
 
     @QtCore.Slot()
     def __on_launcher_enter_event_has_triggered_signal(self, widget) -> None:
-        # When the app is clicked, this method is triggered
+        # ...
         self.enter_event_signal.emit(widget)
+
+    @QtCore.Slot()
+    def __on_launcher_leave_event_has_triggered_signal(self, widget) -> None:
+        # ...
+        self.leave_event_signal.emit(widget)
 
 
 class AppLauncher(QtWidgets.QWidget):
@@ -153,6 +160,7 @@ class AppLauncher(QtWidgets.QWidget):
     clicked = QtCore.Signal(object)
     right_clicked = QtCore.Signal(object)
     enter_event_signal = QtCore.Signal(object)
+    leave_event_signal = QtCore.Signal(object)
     mount_app_launcher_signal = QtCore.Signal(object)
 
     def __init__(
@@ -253,10 +261,16 @@ class AppLauncher(QtWidgets.QWidget):
         # Name
         app_name_layout = QtWidgets.QHBoxLayout()
         app_name_layout.set_contents_margins(0, 0, 0, 30)
+
+        local, escope = (locale.getdefaultlocale()[0], '[Desktop Entry]')
+        name_text = self.desktop_file.content[escope]['Name']
+        if f'Name[{local}]' in self.desktop_file.content[escope]:
+            name_text = self.desktop_file.content[escope][f'Name[{local}]']
+
         app_name = ElidedLabel()
+        app_name.set_text(name_text)
         app_name.set_alignment(
             QtCore.Qt.AlignTop | QtCore.Qt.AlignHCenter)
-        app_name.set_text(self.desktop_file.content['[Desktop Entry]']['Name'])
         app_name.set_style_sheet('background-color: transparent;')
         app_name.set_fixed_width(100)
         app_name_layout.add_widget(app_name)
@@ -276,18 +290,8 @@ class AppLauncher(QtWidgets.QWidget):
         self.main_container.set_style_sheet(self.style_sheet_hover)
         self.bottom_highlight_line.set_style_sheet(
             'background-color: rgba(255, 255, 255, 0.3);')
-        # Generic name to send
-        # local_name = f'GenericName[{locale.getdefaultlocale()[0]}]'
-        # if local_name in self.desktop_file.content['[Desktop Entry]']:
-        #     name = self.desktop_file.content['[Desktop Entry]'][local_name]
-        # elif 'GenericName' in self.desktop_file.content['[Desktop Entry]']:
-        #     name = self.desktop_file.content['[Desktop Entry]']
-        #     ['GenericName']
-        # else:
-        #     name = self.desktop_file.content['[Desktop Entry]']['Name']
-
         self.enter_event_signal.emit(self)
-        # event.ignore()
+        event.ignore()
 
     @QtCore.Slot()
     def leave_event(self, event) -> None:
@@ -297,6 +301,7 @@ class AppLauncher(QtWidgets.QWidget):
         """
         self.main_container.set_style_sheet(self.style_sheet)
         self.bottom_highlight_line.set_style_sheet(self.style_sheet)
+        self.leave_event_signal.emit(self)
         event.ignore()
 
     @QtCore.Slot()
@@ -616,9 +621,9 @@ class SearchApps(QtWidgets.QLineEdit):
             font-size: 20px;
             background: transparent;
             border: 0px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             padding: 10px;""")
 
+    @QtCore.Slot()
     def mouse_press_event(self, event):
         """..."""
         logging.info(self)
