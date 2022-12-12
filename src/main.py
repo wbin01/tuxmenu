@@ -54,7 +54,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.app_pagination_layout.add_layout(self.app_grid_stacked_layout)
 
         # Mount Home page grids
-        self.app_grid_columns_num = 5
+        self.app_grid_columns = 5
 
         self.home_page_layout = QtWidgets.QVBoxLayout()
         self.home_page_layout.set_contents_margins(0, 0, 0, 0)
@@ -67,26 +67,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.home_page_container.set_layout(self.home_page_layout)
 
         self.recent_apps = attachments.SavedApps(config_name='recent-apps')
-        if not self.recent_apps.apps:
-            menu_schema = attachments.MenuSchema()
-            menu_schema.schema['All'].sort()
-            self.recent_apps.apps = menu_schema.schema['All']
-        self.__mount_home_apps_grid(
-            is_first_grid=True,
-            apps_list=self.recent_apps.apps[:self.app_grid_columns_num],
-            pagination_button_text='Recents',
-            grid_title='Recent apps')
+        self.__mount_recent_apps_grid()
 
         self.favorite_apps = attachments.SavedApps(config_name='favorite-apps')
-        if not self.favorite_apps.apps:
-            menu_schema = attachments.MenuSchema()
-            menu_schema.schema['All'].sort()
-            self.favorite_apps.apps = menu_schema.schema['All']
-        self.__mount_home_apps_grid(
-            is_first_grid=False,
-            apps_list=self.favorite_apps.apps[:self.app_grid_columns_num * 2],
-            pagination_button_text='Recents',
-            grid_title='Favorite')
+        self.__mount_favorite_apps_grid()
 
         # Thread
         self.mount_app_grid_signal.connect(self.__mount_app_grid)
@@ -104,35 +88,54 @@ class MainWindow(QtWidgets.QMainWindow):
             self.set_style_sheet(_style)
 
     @QtCore.Slot()
-    def __mount_home_apps_grid(
-            self, is_first_grid: bool,
-            apps_list: list,
-            pagination_button_text: str = '...',
-            grid_title: str = None,
-            ):
+    def __mount_recent_apps_grid(self):
+        # ...
 
         # Category buttons pagination
-        if is_first_grid:
-            pagination_button = widgets.CategoryButton(
-                text=pagination_button_text)
-            setattr(pagination_button, 'page_index', 0)
-            pagination_button.set_check_state(state=True)
-            self.active_category_button = pagination_button
-            pagination_button.clicked.connect(self.__on_category_button)
-            self.category_buttons_layout.add_widget(pagination_button)
+        pagination_button = widgets.CategoryButton(
+            text='Recents')
+        setattr(pagination_button, 'page_index', 0)
+        pagination_button.set_check_state(state=True)
+        self.active_category_button = pagination_button
+        pagination_button.clicked.connect(self.__on_category_button)
+        self.category_buttons_layout.add_widget(pagination_button)
 
         # Title
-        if grid_title:
-            title = QtWidgets.QLabel(grid_title)
-            title.set_contents_margins(0, 10, 0, 10)
-            title.set_alignment(QtCore.Qt.AlignHCenter)
-            title.set_style_sheet(
-                'background: transparent; font-size: 24px;')
-            self.home_page_layout.add_widget(title)
+        title = QtWidgets.QLabel('Recent apps')
+        title.set_contents_margins(0, 10, 0, 10)
+        title.set_alignment(QtCore.Qt.AlignHCenter)
+        title.set_style_sheet(
+            'background: transparent; font-size: 24px;')
+        self.home_page_layout.add_widget(title)
 
         # App grid
         app_grid = widgets.AppGrid(
-            desktop_file_list=apps_list, columns_num=self.app_grid_columns_num)
+            desktop_file_list=self.recent_apps.apps,
+            columns_num=self.app_grid_columns,
+            empty_lines=1)
+        app_grid.clicked.connect(
+            lambda widget: self.__on_app_launcher_was_clicked_signal(
+                widget))
+        app_grid.set_alignment(QtCore.Qt.AlignTop)
+        self.home_page_layout.add_widget(app_grid)
+
+    @QtCore.Slot()
+    def __mount_favorite_apps_grid(self):
+        # ...
+
+        # Title
+        title = QtWidgets.QLabel('Favorite')
+        title.set_contents_margins(0, 10, 0, 10)
+        title.set_alignment(QtCore.Qt.AlignHCenter)
+        title.set_style_sheet(
+            'background: transparent; font-size: 24px;')
+        self.home_page_layout.add_widget(title)
+
+        # App grid
+        app_grid = widgets.AppGrid(
+            desktop_file_list=self.favorite_apps.apps,
+            columns_num=self.app_grid_columns,
+            empty_lines=2)
         app_grid.clicked.connect(
             lambda widget: self.__on_app_launcher_was_clicked_signal(
                 widget))
@@ -181,7 +184,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             # App grid
             app_grid = widgets.AppGrid(
-                desktop_file_list=apps, columns_num=self.app_grid_columns_num)
+                desktop_file_list=apps, columns_num=self.app_grid_columns)
             app_grid.clicked.connect(
                 lambda widget: self.__on_app_launcher_was_clicked_signal(
                     widget))
@@ -209,7 +212,9 @@ class MainWindow(QtWidgets.QMainWindow):
             if widget.desktop_file in self.recent_apps.apps:
                 self.recent_apps.apps.remove(widget.desktop_file)
             else:
-                self.recent_apps.apps.pop()
+                if self.recent_apps.apps and (
+                        len(self.recent_apps.apps) >= self.app_grid_columns):
+                    self.recent_apps.apps.pop()
             self.recent_apps.apps.insert(0, widget.desktop_file)
             self.recent_apps.save_apps(
                 url_list_apps=[x.url for x in self.recent_apps.apps])

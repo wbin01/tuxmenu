@@ -23,6 +23,7 @@ class AppGrid(QtWidgets.QScrollArea):
             self,
             desktop_file_list: list,
             columns_num: int = 5,
+            empty_lines: int = 0,
             *args, **kwargs) -> None:
         """Class constructor.
 
@@ -32,6 +33,7 @@ class AppGrid(QtWidgets.QScrollArea):
         super().__init__(*args, **kwargs)
         self.desktop_file_list = desktop_file_list
         self.columns_num = columns_num
+        self.empty_lines = empty_lines
 
         # Style
         self.set_alignment(QtCore.Qt.AlignTop)
@@ -58,14 +60,14 @@ class AppGrid(QtWidgets.QScrollArea):
         self.line_layout = None
 
         mount_app_launcher_thread = threading.Thread(
-            target=self.__mount_app_launcher_thread)
+            target=self.__mount_grid_thread)
         mount_app_launcher_thread.start()
 
         self.mount_app_launcher_signal.connect(
-            self.__mount_app_launcher)
+            self.__mount_grid)
 
     @QtCore.Slot()
-    def __mount_app_launcher_thread(self) -> None:
+    def __mount_grid_thread(self) -> None:
         # Wait for the widget to render to assemble the app launcher
         if len(self.desktop_file_list) < 10:
             time.sleep(0.01)
@@ -75,37 +77,56 @@ class AppGrid(QtWidgets.QScrollArea):
             self.mount_app_launcher_signal.emit(0)
 
     @QtCore.Slot()
-    def __mount_app_launcher(self) -> None:
+    def __mount_grid(self) -> None:
         # Mount app launcher
-        for num, desktop_file in enumerate(self.desktop_file_list):
-            if num % self.columns_num == 0:
+        if not self.desktop_file_list:
+            self.__mount_a_ghost_grid()
+        else:
+            for num, desktop_file in enumerate(self.desktop_file_list):
+                if num % self.columns_num == 0:
+                    self.line_layout = QtWidgets.QHBoxLayout()
+                    self.line_layout.set_alignment(QtCore.Qt.AlignTop)
+                    self.line_layout.set_contents_margins(0, 0, 0, 0)
+                    self.line_layout.set_spacing(0)
+                    self.main_layout.add_layout(self.line_layout)
+
+                if len(self.desktop_file_list) < 7:
+                    app_launcher = AppLauncher(
+                        desktop_file=desktop_file, no_thread=True)
+                else:
+                    app_launcher = AppLauncher(desktop_file=desktop_file)
+                app_launcher.clicked.connect(
+                    self.__on_app_launcher_was_clicked_signal)
+                self.line_layout.add_widget(app_launcher)
+
+            # Complete grid line
+            missing_items_num = (
+                self.columns_num -
+                (len(self.desktop_file_list) % self.columns_num))
+            if missing_items_num != self.columns_num:
+                for item in range(missing_items_num):
+                    app_launcher = GhostAppLauncher()
+                    app_launcher.clicked.connect(
+                        self.__on_app_launcher_was_clicked_signal)
+                    self.line_layout.add_widget(app_launcher)
+
+        self.main_layout.add_stretch(1)
+
+    @QtCore.Slot()
+    def __mount_a_ghost_grid(self):
+        if self.empty_lines:
+            for _ in range(self.empty_lines):
                 self.line_layout = QtWidgets.QHBoxLayout()
                 self.line_layout.set_alignment(QtCore.Qt.AlignTop)
                 self.line_layout.set_contents_margins(0, 0, 0, 0)
                 self.line_layout.set_spacing(0)
                 self.main_layout.add_layout(self.line_layout)
 
-            if len(self.desktop_file_list) < 7:
-                app_launcher = AppLauncher(
-                    desktop_file=desktop_file, no_thread=True)
-            else:
-                app_launcher = AppLauncher(desktop_file=desktop_file)
-            app_launcher.clicked.connect(
-                self.__on_app_launcher_was_clicked_signal)
-            self.line_layout.add_widget(app_launcher)
-
-        # Complete grid line
-        missing_items_num = (
-            self.columns_num -
-            (len(self.desktop_file_list) % self.columns_num))
-        if missing_items_num != self.columns_num:
-            for item in range(missing_items_num):
-                app_launcher = GhostAppLauncher()
-                app_launcher.clicked.connect(
-                    self.__on_app_launcher_was_clicked_signal)
-                self.line_layout.add_widget(app_launcher)
-
-        self.main_layout.add_stretch(1)
+                for item in range(self.columns_num):
+                    app_launcher = GhostAppLauncher()
+                    app_launcher.clicked.connect(
+                        self.__on_app_launcher_was_clicked_signal)
+                    self.line_layout.add_widget(app_launcher)
 
     @QtCore.Slot()
     def __on_app_launcher_was_clicked_signal(self, widget) -> None:
