@@ -20,7 +20,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         """Class constructor."""
         super().__init__(*args, **kwargs)
-        self.__set_custom_style()
+        self.__set_style()
 
         # Main container
         self.__main_container = QtWidgets.QWidget()
@@ -107,8 +107,7 @@ class MainWindow(QtWidgets.QMainWindow):
             'background: transparent; font-size: 13px;')
         self.__layout_container.add_widget(self.__status_bar)
 
-    @QtCore.Slot()
-    def __set_custom_style(self):
+    def __set_style(self):
         # Adds CSS styling to the main window
         style_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), 'static/style.qss')
@@ -116,7 +115,6 @@ class MainWindow(QtWidgets.QMainWindow):
             _style = f.read()
             self.set_style_sheet(_style)
 
-    @QtCore.Slot()
     def __mount_recent_apps_grid(self):
         # ...
 
@@ -144,7 +142,7 @@ class MainWindow(QtWidgets.QMainWindow):
             columns_num=self.__app_grid_columns,
             empty_lines=1)
         app_grid.clicked_signal.connect(
-            lambda widget: self.__on_app_launcher_was_clicked_signal(
+            lambda widget: self.__on_app_launcher_clicked_signal(
                 widget))
         app_grid.enter_event_signal.connect(
             lambda widget: self.__on_app_launcher_enter_event_signal(
@@ -155,7 +153,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__home_page_layout.add_widget(app_grid, 4)
         # self.home_page_layout.add_stretch(1)
 
-    @QtCore.Slot()
     def __mount_favorite_apps_grid(self):
         # ...
 
@@ -173,7 +170,7 @@ class MainWindow(QtWidgets.QMainWindow):
             columns_num=self.__app_grid_columns,
             empty_lines=2)
         app_grid.clicked_signal.connect(
-            lambda widget: self.__on_app_launcher_was_clicked_signal(
+            lambda widget: self.__on_app_launcher_clicked_signal(
                 widget))
         app_grid.enter_event_signal.connect(
             lambda widget: self.__on_app_launcher_enter_event_signal(
@@ -183,13 +180,11 @@ class MainWindow(QtWidgets.QMainWindow):
         app_grid.set_alignment(QtCore.Qt.AlignTop)
         self.__home_page_layout.add_widget(app_grid, 6)
 
-    @QtCore.Slot()
     def __mount_body_thread(self):
         # Wait for the main window to render to assemble the app grid
         time.sleep(0.05)
         self.__mount_body_signal.emit(0)
 
-    @QtCore.Slot()
     def __mount_body(self):
         # Mount app grid
         menu_schema = attachments.MenuSchema()
@@ -228,7 +223,7 @@ class MainWindow(QtWidgets.QMainWindow):
             app_grid = widgets.AppGrid(
                 desktop_file_list=apps, columns_num=self.__app_grid_columns)
             app_grid.clicked_signal.connect(
-                lambda widget: self.__on_app_launcher_was_clicked_signal(
+                lambda widget: self.__on_app_launcher_clicked_signal(
                     widget))
             app_grid.enter_event_signal.connect(
                 lambda widget: self.__on_app_launcher_enter_event_signal(
@@ -259,7 +254,6 @@ class MainWindow(QtWidgets.QMainWindow):
         shutdown_button = widgets.EnergyButton('system-shutdown')
         self.__energy_buttons_layout.add_widget(shutdown_button)
 
-    @QtCore.Slot()
     def __on_category_button(self):
         # Active category button state (highlight fixed)
         if self.__active_category_button:
@@ -270,8 +264,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__app_grid_stacked_layout.set_current_index(
             self.sender().page_index)
 
-    @QtCore.Slot()
-    def __on_app_launcher_was_clicked_signal(self, widget):
+    def __on_app_launcher_clicked_signal(self, widget):
         # When the app is clicked, this method is triggered
         if str(widget) != '<GhostAppLauncher: Boo>':
             # Save app in "Recents"
@@ -287,7 +280,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 url_list_apps=[x.url for x in self.__recent_apps.apps])
         self.close()
 
-    @QtCore.Slot()
     def __on_app_launcher_enter_event_signal(self, widget):
         # Add status bar info
         local, escope = (locale.getdefaultlocale()[0], '[Desktop Entry]')
@@ -325,14 +317,12 @@ class MainWindow(QtWidgets.QMainWindow):
         text = f'{name.strip(":").strip(".")}{generic_name}{coment}'
         self.__status_bar.set_text(text)
 
-    @QtCore.Slot()
     def __on_app_launcher_leave_event_signal(self):
         self.__status_bar.set_text(' ')
 
 
 class Application(object):
     """Desktop menu for Linux written in Python and Qt."""
-    control_signal = QtCore.Signal(str)
 
     def __init__(self, args):
         """Class constructor."""
