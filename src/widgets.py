@@ -1,5 +1,6 @@
 #!/usr/bin env python3
 import locale
+import logging
 import os.path
 import random
 import threading
@@ -15,10 +16,10 @@ from attachments import DesktopFile, MenuSchema
 
 class AppGrid(QtWidgets.QScrollArea):
     """App launcher grid widget."""
-    clicked = QtCore.Signal(QtGui.QMouseEvent)
+    clicked_signal = QtCore.Signal(QtGui.QMouseEvent)
     enter_event_signal = QtCore.Signal(object)
     leave_event_signal = QtCore.Signal(object)
-    mount_app_launcher_signal = QtCore.Signal(object)
+    __mount_app_launcher_signal = QtCore.Signal(object)
 
     def __init__(
             self,
@@ -32,9 +33,9 @@ class AppGrid(QtWidgets.QScrollArea):
         :param columns_num: Number of grid columns, default is 5
         """
         super().__init__(*args, **kwargs)
-        self.desktop_file_list = desktop_file_list
-        self.columns_num = columns_num
-        self.empty_lines = empty_lines
+        self.__desktop_file_list = desktop_file_list
+        self.__columns_num = columns_num
+        self.__empty_lines = empty_lines
 
         # Style
         self.set_alignment(QtCore.Qt.AlignTop)
@@ -47,99 +48,99 @@ class AppGrid(QtWidgets.QScrollArea):
         self.set_widget_resizable(True)  # ScrollBarAlwaysOn
 
         # Main layout
-        self.main_container = QtWidgets.QWidget()
-        self.main_container.set_contents_margins(0, 0, 0, 0)
-        self.set_widget(self.main_container)
+        self.__main_container = QtWidgets.QWidget()
+        self.__main_container.set_contents_margins(0, 0, 0, 0)
+        self.set_widget(self.__main_container)
 
-        self.main_layout = QtWidgets.QVBoxLayout()
-        self.main_layout.set_alignment(QtCore.Qt.AlignTop)
-        self.main_layout.set_contents_margins(0, 0, 0, 0)
-        self.main_layout.set_spacing(0)
-        self.main_container.set_layout(self.main_layout)
+        self.__main_layout = QtWidgets.QVBoxLayout()
+        self.__main_layout.set_alignment(QtCore.Qt.AlignTop)
+        self.__main_layout.set_contents_margins(0, 0, 0, 0)
+        self.__main_layout.set_spacing(0)
+        self.__main_container.set_layout(self.__main_layout)
 
         # Grid creation
-        self.line_layout = None
+        self.__line_layout = None
 
         mount_app_launcher_thread = threading.Thread(
             target=self.__mount_grid_thread)
         mount_app_launcher_thread.start()
 
-        self.mount_app_launcher_signal.connect(
+        self.__mount_app_launcher_signal.connect(
             self.__mount_grid)
 
     @QtCore.Slot()
     def __mount_grid_thread(self) -> None:
         # Wait for the widget to render to assemble the app launcher
-        if len(self.desktop_file_list) < 10:
+        if len(self.__desktop_file_list) < 10:
             time.sleep(0.01)
-            self.mount_app_launcher_signal.emit(0)
+            self.__mount_app_launcher_signal.emit(0)
         else:
             time.sleep(0.07)
-            self.mount_app_launcher_signal.emit(0)
+            self.__mount_app_launcher_signal.emit(0)
 
     @QtCore.Slot()
     def __mount_grid(self) -> None:
         # Mount app launcher
-        if not self.desktop_file_list:
+        if not self.__desktop_file_list:
             self.__mount_a_ghost_grid()
             return
 
-        for num, desktop_file in enumerate(self.desktop_file_list):
-            if num % self.columns_num == 0:
-                self.line_layout = QtWidgets.QHBoxLayout()
-                self.line_layout.set_alignment(QtCore.Qt.AlignTop)
-                self.line_layout.set_contents_margins(0, 0, 0, 0)
-                self.line_layout.set_spacing(0)
-                self.main_layout.add_layout(self.line_layout)
+        for num, desktop_file in enumerate(self.__desktop_file_list):
+            if num % self.__columns_num == 0:
+                self.__line_layout = QtWidgets.QHBoxLayout()
+                self.__line_layout.set_alignment(QtCore.Qt.AlignTop)
+                self.__line_layout.set_contents_margins(0, 0, 0, 0)
+                self.__line_layout.set_spacing(0)
+                self.__main_layout.add_layout(self.__line_layout)
 
-            if len(self.desktop_file_list) < 7:
+            if len(self.__desktop_file_list) < 7:
                 app_launcher = AppLauncher(
                     desktop_file=desktop_file, no_thread=True)
             else:
                 app_launcher = AppLauncher(desktop_file=desktop_file)
-            app_launcher.clicked.connect(
+            app_launcher.clicked_signal.connect(
                 self.__on_app_launcher_was_clicked_signal)
             app_launcher.enter_event_signal.connect(
                 self.__on_launcher_enter_event_has_triggered_signal)
             app_launcher.leave_event_signal.connect(
                 self.__on_launcher_leave_event_has_triggered_signal)
-            self.line_layout.add_widget(app_launcher)
+            self.__line_layout.add_widget(app_launcher)
 
         # Complete grid line
         missing_items_num = (
-            self.columns_num -
-            (len(self.desktop_file_list) % self.columns_num))
-        if missing_items_num != self.columns_num:
+                self.__columns_num -
+                (len(self.__desktop_file_list) % self.__columns_num))
+        if missing_items_num != self.__columns_num:
             for item in range(missing_items_num):
                 app_launcher = GhostAppLauncher()
-                app_launcher.clicked.connect(
+                app_launcher.clicked_signal.connect(
                     self.__on_app_launcher_was_clicked_signal)
-                self.line_layout.add_widget(app_launcher)
+                self.__line_layout.add_widget(app_launcher)
 
-        self.main_layout.add_stretch(1)
+        self.__main_layout.add_stretch(1)
 
     @QtCore.Slot()
     def __mount_a_ghost_grid(self):
-        if self.empty_lines:
-            for _ in range(self.empty_lines):
-                self.line_layout = QtWidgets.QHBoxLayout()
-                self.line_layout.set_alignment(QtCore.Qt.AlignTop)
-                self.line_layout.set_contents_margins(0, 0, 0, 0)
-                self.line_layout.set_spacing(0)
-                self.main_layout.add_layout(self.line_layout)
+        if self.__empty_lines:
+            for _ in range(self.__empty_lines):
+                self.__line_layout = QtWidgets.QHBoxLayout()
+                self.__line_layout.set_alignment(QtCore.Qt.AlignTop)
+                self.__line_layout.set_contents_margins(0, 0, 0, 0)
+                self.__line_layout.set_spacing(0)
+                self.__main_layout.add_layout(self.__line_layout)
 
-                for item in range(self.columns_num):
+                for item in range(self.__columns_num):
                     app_launcher = GhostAppLauncher()
-                    app_launcher.clicked.connect(
+                    app_launcher.clicked_signal.connect(
                         self.__on_app_launcher_was_clicked_signal)
-                    self.line_layout.add_widget(app_launcher)
+                    self.__line_layout.add_widget(app_launcher)
 
-            self.main_layout.add_stretch(1)
+            self.__main_layout.add_stretch(1)
 
     @QtCore.Slot()
     def __on_app_launcher_was_clicked_signal(self, widget) -> None:
         # When the app is clicked, this method is triggered
-        self.clicked.emit(widget)
+        self.clicked_signal.emit(widget)
 
     @QtCore.Slot()
     def __on_launcher_enter_event_has_triggered_signal(self, widget) -> None:
@@ -157,75 +158,79 @@ class AppLauncher(QtWidgets.QWidget):
 
     Displays the application to launch.
     """
-    clicked = QtCore.Signal(object)
-    right_clicked = QtCore.Signal(object)
+    clicked_signal = QtCore.Signal(object)
+    right_clicked_signal = QtCore.Signal(object)
     enter_event_signal = QtCore.Signal(object)
     leave_event_signal = QtCore.Signal(object)
-    mount_app_launcher_signal = QtCore.Signal(object)
+    __mount_app_launcher_signal = QtCore.Signal(object)
 
     def __init__(
             self, desktop_file: DesktopFile, no_thread: bool = False,
             *args, **kwargs) -> None:
         """Class constructor."""
         super().__init__(*args, **kwargs)
-        self.desktop_file = desktop_file
-        self.no_thread = no_thread
+        self.__desktop_file = desktop_file
+        self.__no_thread = no_thread
 
         # Self setting
         self.set_contents_margins(0, 0, 0, 0)
         self.set_fixed_height(150)
 
         # Style (TODO_ icon accent color)
-        self.bg_color_red, self.bg_color_green, self.bg_color_blue = (
+        self.__bg_color_red, self.__bg_color_green, self.__bg_color_blue = (
             random.randint(50, 200),
             random.randint(50, 200),
             random.randint(50, 200))
-        self.style_sheet = (
+        self.__style_sheet = (
             'background-color: rgba('
-            f'{self.bg_color_red}, '
-            f'{self.bg_color_green}, '
-            f'{self.bg_color_blue}, 0.05)')
-        self.style_sheet_hover = (
+            f'{self.__bg_color_red}, '
+            f'{self.__bg_color_green}, '
+            f'{self.__bg_color_blue}, 0.05)')
+        self.__style_sheet_hover = (
             'background-color: rgba('
-            f'{self.bg_color_red}, '
-            f'{self.bg_color_green}, '
-            f'{self.bg_color_blue}, 0.1)')
+            f'{self.__bg_color_red}, '
+            f'{self.__bg_color_green}, '
+            f'{self.__bg_color_blue}, 0.1)')
 
         # Main layout and container
-        self.main_layout = QtWidgets.QVBoxLayout()
-        self.main_layout.set_contents_margins(0, 0, 0, 0)
-        self.main_layout.set_spacing(0)
-        self.set_layout(self.main_layout)
+        self.__main_layout = QtWidgets.QVBoxLayout()
+        self.__main_layout.set_contents_margins(0, 0, 0, 0)
+        self.__main_layout.set_spacing(0)
+        self.set_layout(self.__main_layout)
 
-        self.main_container = QtWidgets.QWidget()
-        self.main_container.set_style_sheet(self.style_sheet)
-        self.main_layout.add_widget(self.main_container)
+        self.__main_container = QtWidgets.QWidget()
+        self.__main_container.set_style_sheet(self.__style_sheet)
+        self.__main_layout.add_widget(self.__main_container)
 
         # Body layout
-        self.body_layout = QtWidgets.QVBoxLayout()
-        self.body_layout.set_contents_margins(0, 30, 0, 0)
-        self.main_container.set_layout(self.body_layout)
+        self.__body_layout = QtWidgets.QVBoxLayout()
+        self.__body_layout.set_contents_margins(0, 30, 0, 0)
+        self.__main_container.set_layout(self.__body_layout)
 
         # Accent
-        self.bottom_highlight_line = QtWidgets.QWidget()
-        self.main_layout.add_widget(self.bottom_highlight_line)
+        self.__bottom_highlight_line = QtWidgets.QWidget()
+        self.__main_layout.add_widget(self.__bottom_highlight_line)
 
         # Mount app laucher body (icon, name)
-        if self.no_thread:
+        if self.__no_thread:
             self.__mount_app_launcher()
         else:
-            self.mount_app_launcher_signal.connect(
+            self.__mount_app_launcher_signal.connect(
                 self.__mount_app_launcher)
 
-            self.mount_app_launcher_thread = threading.Thread(
+            mount_app_launcher_thread = threading.Thread(
                 target=self.__mount_app_launcher_thread)
-            self.mount_app_launcher_thread.start()
+            mount_app_launcher_thread.start()
+
+    @property
+    def desktop_file(self) -> DesktopFile:
+        return self.__desktop_file
 
     @QtCore.Slot()
     def __mount_app_launcher_thread(self) -> None:
         # Wait for the widget to render to assemble the app launcher body
         time.sleep(0.1)
-        self.mount_app_launcher_signal.emit(0)
+        self.__mount_app_launcher_signal.emit(0)
 
     @QtCore.Slot()
     def __mount_app_launcher(self) -> None:
@@ -233,9 +238,10 @@ class AppLauncher(QtWidgets.QWidget):
 
         # Icon
         icon_view = QtWidgets.QLabel()
-        if 'Icon' in self.desktop_file.content['[Desktop Entry]']:
+        if 'Icon' in self.__desktop_file.content['[Desktop Entry]']:
             icon_path = IconTheme.getIconPath(
-                iconname=self.desktop_file.content['[Desktop Entry]']['Icon'],
+                iconname=self.__desktop_file.content[
+                    '[Desktop Entry]']['Icon'],
                 size=48,
                 theme='breeze-dark',
                 extensions=['png', 'svg', 'xpm'])
@@ -256,16 +262,16 @@ class AppLauncher(QtWidgets.QWidget):
         icon_view.set_size_policy(
             QtWidgets.QSizePolicy.Expanding,
             QtWidgets.QSizePolicy.Expanding)
-        self.body_layout.add_widget(icon_view)
+        self.__body_layout.add_widget(icon_view)
 
         # Name
         app_name_layout = QtWidgets.QHBoxLayout()
         app_name_layout.set_contents_margins(0, 0, 0, 30)
 
         local, escope = (locale.getdefaultlocale()[0], '[Desktop Entry]')
-        name_text = self.desktop_file.content[escope]['Name']
-        if f'Name[{local}]' in self.desktop_file.content[escope]:
-            name_text = self.desktop_file.content[escope][f'Name[{local}]']
+        name_text = self.__desktop_file.content[escope]['Name']
+        if f'Name[{local}]' in self.__desktop_file.content[escope]:
+            name_text = self.__desktop_file.content[escope][f'Name[{local}]']
 
         app_name = ElidedLabel()
         app_name.set_text(name_text)
@@ -274,11 +280,11 @@ class AppLauncher(QtWidgets.QWidget):
         app_name.set_style_sheet('background-color: transparent;')
         app_name.set_fixed_width(100)
         app_name_layout.add_widget(app_name)
-        self.body_layout.add_layout(app_name_layout)
+        self.__body_layout.add_layout(app_name_layout)
 
         # Accent
-        self.bottom_highlight_line.set_style_sheet(self.style_sheet)
-        self.bottom_highlight_line.set_fixed_height(5)
+        self.__bottom_highlight_line.set_style_sheet(self.__style_sheet)
+        self.__bottom_highlight_line.set_fixed_height(5)
 
     @QtCore.Slot()
     def enter_event(self, event) -> None:
@@ -287,8 +293,8 @@ class AppLauncher(QtWidgets.QWidget):
         Highlight colors when mouse hovers over widget.
         """
 
-        self.main_container.set_style_sheet(self.style_sheet_hover)
-        self.bottom_highlight_line.set_style_sheet(
+        self.__main_container.set_style_sheet(self.__style_sheet_hover)
+        self.__bottom_highlight_line.set_style_sheet(
             'background-color: rgba(255, 255, 255, 0.3);')
         self.enter_event_signal.emit(self)
         event.ignore()
@@ -299,8 +305,8 @@ class AppLauncher(QtWidgets.QWidget):
 
         Remove highlighting colors when the mouse leaves the widget.
         """
-        self.main_container.set_style_sheet(self.style_sheet)
-        self.bottom_highlight_line.set_style_sheet(self.style_sheet)
+        self.__main_container.set_style_sheet(self.__style_sheet)
+        self.__bottom_highlight_line.set_style_sheet(self.__style_sheet)
         self.leave_event_signal.emit(self)
         event.ignore()
 
@@ -311,22 +317,22 @@ class AppLauncher(QtWidgets.QWidget):
         Emits a signal that the widget has been clicked.
         """
         if event.button() == QtCore.Qt.LeftButton:
-            self.clicked.emit(self)
+            self.clicked_signal.emit(self)
         elif event.button() == QtCore.Qt.RightButton:
-            print(self.desktop_file, 'Right click')
-            self.right_clicked.emit(self)
+            print(self.__desktop_file, 'Right click')
+            self.right_clicked_signal.emit(self)
 
     def paint_event(self, event):
         img_path = None
-        if 'snapd' in self.desktop_file.url:
+        if 'snapd' in self.__desktop_file.url:
             img_path = os.path.join(
                 os.path.abspath(os.path.dirname(__file__)),
                 'static/snap.svg')
-        elif 'flatpak' in self.desktop_file.url:
+        elif 'flatpak' in self.__desktop_file.url:
             img_path = os.path.join(
                 os.path.abspath(os.path.dirname(__file__)),
                 'static/flatpak.svg')
-        elif 'AppImage' in self.desktop_file.content[
+        elif 'AppImage' in self.__desktop_file.content[
                 '[Desktop Entry]']['Exec']:
             img_path = os.path.join(
                 os.path.abspath(os.path.dirname(__file__)),
@@ -340,7 +346,7 @@ class AppLauncher(QtWidgets.QWidget):
         event.ignore()
 
     def __str__(self) -> str:
-        return str(self.desktop_file)
+        return str(self.__desktop_file)
 
 
 class GhostAppLauncher(QtWidgets.QWidget):
@@ -348,7 +354,7 @@ class GhostAppLauncher(QtWidgets.QWidget):
 
     Made to fill a row space when there are no more valid widgets to use.
     """
-    clicked = QtCore.Signal(object)
+    clicked_signal = QtCore.Signal(object)
 
     def __init__(self, *args, **kwargs) -> None:
         """Class constructor."""
@@ -358,30 +364,30 @@ class GhostAppLauncher(QtWidgets.QWidget):
         self.set_fixed_height(150)
 
         # Main layout
-        self.layout_container = QtWidgets.QVBoxLayout()
-        self.layout_container.set_alignment(QtCore.Qt.AlignCenter)
-        self.layout_container.set_contents_margins(1, 1, 1, 1)
-        self.layout_container.set_spacing(0)
-        self.set_layout(self.layout_container)
+        self.__layout_container = QtWidgets.QVBoxLayout()
+        self.__layout_container.set_alignment(QtCore.Qt.AlignCenter)
+        self.__layout_container.set_contents_margins(1, 1, 1, 1)
+        self.__layout_container.set_spacing(0)
+        self.set_layout(self.__layout_container)
 
         # Icon
-        self.pixmap = QtGui.QPixmap(os.path.join(
+        self.__pixmap = QtGui.QPixmap(os.path.join(
             os.path.abspath(os.path.dirname(__file__)),
             'static/ghostapp.svg'))
-        self.scaled_pixmap = self.pixmap.scaled(
+        self.__pixmap = self.__pixmap.scaled(
             48, 48, QtCore.Qt.KeepAspectRatio)
-        self.icon_view = QtWidgets.QLabel(self)
-        self.icon_view.set_pixmap(self.scaled_pixmap)
-        self.icon_view.set_alignment(QtCore.Qt.AlignCenter)
-        self.icon_view.set_size_policy(
+        self.__icon_view = QtWidgets.QLabel(self)
+        self.__icon_view.set_pixmap(self.__pixmap)
+        self.__icon_view.set_alignment(QtCore.Qt.AlignCenter)
+        self.__icon_view.set_size_policy(
             QtWidgets.QSizePolicy.Expanding,
             QtWidgets.QSizePolicy.Expanding)
-        self.layout_container.add_widget(self.icon_view)
+        self.__layout_container.add_widget(self.__icon_view)
 
         # Name
-        self.app_name = QtWidgets.QLabel()
-        self.app_name.set_text(' ')
-        self.app_name.set_alignment(QtCore.Qt.AlignHCenter)
+        self.__app_name = QtWidgets.QLabel()
+        self.__app_name.set_text(' ')
+        self.__app_name.set_alignment(QtCore.Qt.AlignHCenter)
 
     @QtCore.Slot()
     def mouse_press_event(self, event) -> None:
@@ -391,7 +397,7 @@ class GhostAppLauncher(QtWidgets.QWidget):
         """
         # event -> QtGui.QMouseEvent
         if event.button() == QtCore.Qt.LeftButton:
-            self.clicked.emit(self)
+            self.clicked_signal.emit(self)
 
     def __str__(self) -> str:
         return '<GhostAppLauncher: Boo>'
@@ -422,46 +428,46 @@ class CategoryButton(QtWidgets.QWidget):
 
     A custom button to use for category pagination.
     """
-    clicked = QtCore.Signal(object)
+    clicked_signal = QtCore.Signal(object)
 
     def __init__(
             self, text: str = '...', icon_name: str = None,
             *args, **kwargs) -> None:
         """Class constructor."""
         super().__init__(*args, **kwargs)
-        self.text = text
-        self.icon_name = icon_name
-        self.state = False
+        self.__text = text
+        self.__icon_name = icon_name
+        self.__state = False
 
-        self.main_layout = QtWidgets.QVBoxLayout()
-        self.main_layout.set_contents_margins(0, 0, 0, 0)
-        self.main_layout.set_spacing(0)
-        self.set_layout(self.main_layout)
+        self.__main_layout = QtWidgets.QVBoxLayout()
+        self.__main_layout.set_contents_margins(0, 0, 0, 0)
+        self.__main_layout.set_spacing(0)
+        self.set_layout(self.__main_layout)
 
-        self.main_container = QtWidgets.QWidget()
-        self.main_container.set_contents_margins(0, 0, 0, 0)
-        self.main_container.set_style_sheet('background: transparent;')
-        self.main_layout.add_widget(self.main_container)
+        self.__main_container = QtWidgets.QWidget()
+        self.__main_container.set_contents_margins(0, 0, 0, 0)
+        self.__main_container.set_style_sheet('background: transparent;')
+        self.__main_layout.add_widget(self.__main_container)
 
-        self.body_layout = QtWidgets.QVBoxLayout()
-        self.body_layout.set_contents_margins(0, 0, 0, 0)
-        self.body_layout.set_spacing(0)
-        self.main_container.set_layout(self.body_layout)
+        self.__body_layout = QtWidgets.QVBoxLayout()
+        self.__body_layout.set_contents_margins(0, 0, 0, 0)
+        self.__body_layout.set_spacing(0)
+        self.__main_container.set_layout(self.__body_layout)
 
         # Icon and Text layout
-        self.text_layout = QtWidgets.QHBoxLayout()
-        self.text_layout.set_alignment(
+        self.__text_layout = QtWidgets.QHBoxLayout()
+        self.__text_layout.set_alignment(
             QtCore.Qt.AlignLeft | QtCore.Qt.AlignCenter)
-        self.text_layout.set_contents_margins(10, 0, 30, 0)
-        self.text_layout.set_spacing(0)
-        self.body_layout.add_layout(self.text_layout)
+        self.__text_layout.set_contents_margins(10, 0, 30, 0)
+        self.__text_layout.set_spacing(0)
+        self.__body_layout.add_layout(self.__text_layout)
 
         # Icon
-        if self.icon_name:
+        if self.__icon_name:
             icon_view = QtWidgets.QLabel()
             icon_path = IconTheme.getIconPath(
-                iconname=self.icon_name,
-                size=48,
+                iconname=self.__icon_name,
+                size=22,
                 theme='breeze-dark',
                 extensions=['png', 'svg', 'xpm'])
             try:
@@ -472,27 +478,28 @@ class CategoryButton(QtWidgets.QWidget):
                     os.path.abspath(os.path.dirname(__file__)),
                     'static/defaultapp.svg'))
 
-            scaled_pixmap = pixmap.scaled(
+            pixmap = pixmap.scaled(
                 22, 22, QtCore.Qt.KeepAspectRatio)
-            icon_view.set_pixmap(scaled_pixmap)
+            icon_view.set_pixmap(pixmap)
 
             icon_view.set_alignment(
                 QtCore.Qt.AlignLeft | QtCore.Qt.AlignCenter)
             icon_view.set_style_sheet('background-color: transparent;')
-            self.text_layout.add_widget(icon_view)
+            self.__text_layout.add_widget(icon_view)
 
-        self.text = QtWidgets.QLabel(self.text)
-        self.text.set_contents_margins(20, 10, 5, 10)
-        self.text.set_style_sheet("""
+        self.__text = QtWidgets.QLabel(self.__text)
+        self.__text.set_contents_margins(20, 10, 5, 10)
+        self.__text.set_style_sheet("""
             background: transparent;
-            font-size: 18px;""")
-        self.text_layout.add_widget(self.text)
+            font-size: 16px;""")
+        self.__text_layout.add_widget(self.__text)
 
         # Accent
-        self.bottom_highlight_line = QtWidgets.QWidget()
-        self.bottom_highlight_line.set_fixed_height(3)
-        self.bottom_highlight_line.set_style_sheet('background: transparent;')
-        self.body_layout.add_widget(self.bottom_highlight_line)
+        self.__bottom_highlight_line = QtWidgets.QWidget()
+        self.__bottom_highlight_line.set_fixed_height(3)
+        self.__bottom_highlight_line.set_style_sheet(
+            'background: transparent;')
+        self.__body_layout.add_widget(self.__bottom_highlight_line)
 
     @QtCore.Slot()
     def check_state(self) -> bool:
@@ -500,7 +507,7 @@ class CategoryButton(QtWidgets.QWidget):
 
         Returns a boolean informing whether the button is active.
         """
-        return self.state
+        return self.__state
 
     @QtCore.Slot()
     def set_check_state(self, state: bool) -> None:
@@ -515,16 +522,16 @@ class CategoryButton(QtWidgets.QWidget):
 
         :param state: a boolean to enable or disable the button state
         """
-        self.state = state
+        self.__state = state
         if state:
-            self.main_container.set_style_sheet("""
+            self.__main_container.set_style_sheet("""
                 background-color: rgba(255, 255, 255, 0.1);""")
-            self.bottom_highlight_line.set_style_sheet("""
+            self.__bottom_highlight_line.set_style_sheet("""
                 background-color: rgba(255, 255, 255, 0.3);""")
         else:
-            self.main_container.set_style_sheet("""
+            self.__main_container.set_style_sheet("""
                 background: transparent;""")
-            self.bottom_highlight_line.set_style_sheet("""
+            self.__bottom_highlight_line.set_style_sheet("""
                 background: transparent;""")
 
     @QtCore.Slot()
@@ -534,7 +541,7 @@ class CategoryButton(QtWidgets.QWidget):
         Emits a signal that the widget has been clicked.
         """
         if event.button() == QtCore.Qt.LeftButton:
-            self.clicked.emit(self)
+            self.clicked_signal.emit(self)
             event.ignore()
 
     @QtCore.Slot()
@@ -543,10 +550,10 @@ class CategoryButton(QtWidgets.QWidget):
 
         Highlight colors when mouse hovers over widget.
         """
-        if not self.state:
-            self.main_container.set_style_sheet("""
+        if not self.__state:
+            self.__main_container.set_style_sheet("""
                 background-color: rgba(255, 255, 255, 0.05);""")
-        self.clicked.emit(self)
+        self.clicked_signal.emit(self)
         event.ignore()
 
     @QtCore.Slot()
@@ -555,8 +562,8 @@ class CategoryButton(QtWidgets.QWidget):
 
         Remove highlighting colors when the mouse leaves the widget.
         """
-        if not self.state:
-            self.main_container.set_style_sheet("""
+        if not self.__state:
+            self.__main_container.set_style_sheet("""
                 background: transparent;""")
         event.ignore()
 
@@ -566,27 +573,27 @@ class EnergyButton(QtWidgets.QWidget):
 
     A custom button to use for category pagination.
     """
-    clicked = QtCore.Signal(object)
+    clicked_signal = QtCore.Signal(object)
 
     def __init__(self, icon_name: str, *args, **kwargs) -> None:
         """Class constructor."""
         super().__init__(*args, **kwargs)
-        self.icon_name = icon_name
+        self.__icon_name = icon_name
 
-        self.main_layout = QtWidgets.QVBoxLayout()
-        self.main_layout.set_contents_margins(0, 0, 0, 0)
-        self.main_layout.set_spacing(0)
-        self.set_layout(self.main_layout)
+        self.__main_layout = QtWidgets.QVBoxLayout()
+        self.__main_layout.set_contents_margins(0, 0, 0, 0)
+        self.__main_layout.set_spacing(0)
+        self.set_layout(self.__main_layout)
 
-        self.icon_view = QtWidgets.QLabel()
-        self.icon_view.set_fixed_height(80)
-        self.icon_view.set_fixed_width(80)
-        self.icon_view.set_contents_margins(0, 0, 0, 0)
-        self.icon_view.set_alignment(QtCore.Qt.AlignCenter)
-        self.icon_view.set_style_sheet('background-color: transparent;')
+        self.__icon_view = QtWidgets.QLabel()
+        self.__icon_view.set_fixed_height(80)
+        self.__icon_view.set_fixed_width(80)
+        self.__icon_view.set_contents_margins(0, 0, 0, 0)
+        self.__icon_view.set_alignment(QtCore.Qt.AlignCenter)
+        self.__icon_view.set_style_sheet('background-color: transparent;')
 
         icon_path = IconTheme.getIconPath(
-            iconname=self.icon_name,
+            iconname=self.__icon_name,
             size=48,
             theme='breeze-dark',
             extensions=['png', 'svg', 'xpm'])
@@ -600,8 +607,8 @@ class EnergyButton(QtWidgets.QWidget):
 
         scaled_pixmap = pixmap.scaled(
             32, 32, QtCore.Qt.KeepAspectRatio)
-        self.icon_view.set_pixmap(scaled_pixmap)
-        self.main_layout.add_widget(self.icon_view)
+        self.__icon_view.set_pixmap(scaled_pixmap)
+        self.__main_layout.add_widget(self.__icon_view)
 
     @QtCore.Slot()
     def mouse_press_event(self, event) -> None:
@@ -610,7 +617,7 @@ class EnergyButton(QtWidgets.QWidget):
         Emits a signal that the widget has been clicked.
         """
         if event.button() == QtCore.Qt.LeftButton:
-            self.clicked.emit(self)
+            self.clicked_signal.emit(self)
             event.ignore()
 
     @QtCore.Slot()
@@ -619,7 +626,7 @@ class EnergyButton(QtWidgets.QWidget):
 
         Highlight colors when mouse hovers over widget.
         """
-        self.icon_view.set_style_sheet("""
+        self.__icon_view.set_style_sheet("""
             border-radius: 40px;
             background-color: rgba(255, 255, 255, 0.05);""")
         event.ignore()
@@ -630,7 +637,7 @@ class EnergyButton(QtWidgets.QWidget):
 
         Remove highlighting colors when the mouse leaves the widget.
         """
-        self.icon_view.set_style_sheet('background: transparent;')
+        self.__icon_view.set_style_sheet('background: transparent;')
         event.ignore()
 
 
@@ -649,7 +656,6 @@ class SearchApps(QtWidgets.QLineEdit):
     @QtCore.Slot()
     def mouse_press_event(self, event):
         """..."""
-        logging.info(self)
         if (event.button() == QtCore.Qt.LeftButton
                 or event.button() == QtCore.Qt.RightButton):
-            app.quit()
+            print(self)
