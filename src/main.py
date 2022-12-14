@@ -36,10 +36,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Search
         self.__search_input = widgets.SearchApps()
-        self.__search_input.set_contents_margins(50, 0, 50, 0)
+        self.__search_input.set_contents_margins(200, 0, 200, 0)
         self.__search_input.set_placeholder_text('Type to search')
-        # self.search_input.set_read_only(True)
-        self.__search_input.set_alignment(QtCore.Qt.AlignCenter)
+        self.__search_input.set_alignment(QtCore.Qt.AlignHCenter)
         self.__layout_container.add_widget(self.__search_input)
 
         # App pagination layout
@@ -291,7 +290,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.__recent_apps.save_apps(
                 url_list_apps=[x.url for x in self.__recent_apps.apps])
             print(f'Run "AppLauncher: {widget.desktop_file()}" and close')
-        print(f'Run "GhostAppLauncher" and close')
+        else:
+            print(f'Run "GhostAppLauncher" and close')
         self.close()
 
     def __on_app_launcher_enter_event(self, widget):
@@ -358,17 +358,20 @@ class MainWindow(QtWidgets.QMainWindow):
 
             if key == QtCore.Qt.Key_Escape:
                 self.__search_input.clear()
+                text = ''  # Fix espace
 
             if key == QtCore.Qt.Key_Return or key == QtCore.Qt.Key_Enter:
                 print("Enter key pressed")
-                focus_widget = QtWidgets.QApplication.focus_widget()
+                # focus_widget = QtWidgets.QApplication.focus_widget()
+                # if isinstance(focus_widget, widgets.AppLauncher):
+                #     print(focus_widget)
+                #     self.close()
 
-                if isinstance(focus_widget, widgets.AppLauncher):
-                    print(focus_widget)
-                    self.close()
+            if key == QtCore.Qt.Key_Backspace:
+                self.__search_input.set_text(self.__search_input.text()[:-1])
             else:
                 self.__search_input.set_text(self.__search_input.text() + text)
-                self.__search_input.deselect()
+            self.__search_input.deselect()
 
         return QtWidgets.QWidget.event_filter(self, widget, event)
 
@@ -381,7 +384,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
 class Application(object):
     """Desktop menu for Linux written in Python and Qt."""
-
     def __init__(self, args):
         """Class constructor."""
         self.__application = QtWidgets.QApplication(args)
