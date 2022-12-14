@@ -68,17 +68,14 @@ class AppGrid(QtWidgets.QScrollArea):
         self.__mount_app_launcher_signal.connect(
             self.__mount_grid)
 
-    @property
     def clicked_signal(self) -> QtCore.Signal:
         """..."""
         return self.__clicked_signal
 
-    @property
     def enter_event_signal(self) -> QtCore.Signal:
         """..."""
         return self.__enter_event_signal
 
-    @property
     def leave_event_signal(self) -> QtCore.Signal:
         """..."""
         return self.__leave_event_signal
@@ -111,11 +108,11 @@ class AppGrid(QtWidgets.QScrollArea):
                     desktop_file=desktop_file, no_thread=True)
             else:
                 app_launcher = AppLauncher(desktop_file=desktop_file)
-            app_launcher.clicked_signal.connect(
+            app_launcher.clicked_signal().connect(
                 self.__on_app_launcher_clicked_signal)
-            app_launcher.enter_event_signal.connect(
+            app_launcher.enter_event_signal().connect(
                 self.__on_launcher_enter_event_signal)
-            app_launcher.leave_event_signal.connect(
+            app_launcher.leave_event_signal().connect(
                 self.__on_launcher_leave_event_signal)
             self.__line_layout.add_widget(app_launcher)
 
@@ -126,7 +123,7 @@ class AppGrid(QtWidgets.QScrollArea):
         if missing_items_num != self.__columns_num:
             for item in range(missing_items_num):
                 app_launcher = GhostAppLauncher()
-                app_launcher.clicked_signal.connect(
+                app_launcher.clicked_signal().connect(
                     self.__on_app_launcher_clicked_signal)
                 self.__line_layout.add_widget(app_launcher)
 
@@ -143,7 +140,7 @@ class AppGrid(QtWidgets.QScrollArea):
 
                 for item in range(self.__columns_num):
                     app_launcher = GhostAppLauncher()
-                    app_launcher.clicked_signal.connect(
+                    app_launcher.clicked_signal().connect(
                         self.__on_app_launcher_clicked_signal)
                     self.__line_layout.add_widget(app_launcher)
 
@@ -155,11 +152,11 @@ class AppGrid(QtWidgets.QScrollArea):
 
     def __on_launcher_enter_event_signal(self, widget) -> None:
         # ...
-        self.enter_event_signal.emit(widget)
+        self.enter_event_signal().emit(widget)
 
     def __on_launcher_leave_event_signal(self, widget) -> None:
         # ...
-        self.leave_event_signal.emit(widget)
+        self.leave_event_signal().emit(widget)
 
 
 class AppLauncher(QtWidgets.QWidget):
@@ -231,26 +228,21 @@ class AppLauncher(QtWidgets.QWidget):
                 target=self.__mount_app_launcher_thread)
             mount_app_launcher_thread.start()
 
-    @property
     def desktop_file(self) -> DesktopFile:
         return self.__desktop_file
 
-    @property
     def clicked_signal(self) -> QtCore.Signal:
         """..."""
         return self.__clicked_signal
 
-    @property
     def right_clicked_signal(self) -> QtCore.Signal:
         """..."""
         return self.__right_clicked_signal
 
-    @property
     def enter_event_signal(self) -> QtCore.Signal:
         """..."""
         return self.__enter_event_signal
 
-    @property
     def leave_event_signal(self) -> QtCore.Signal:
         """..."""
         return self.__leave_event_signal
@@ -413,7 +405,6 @@ class GhostAppLauncher(QtWidgets.QWidget):
         self.__app_name.set_text(' ')
         self.__app_name.set_alignment(QtCore.Qt.AlignHCenter)
 
-    @property
     def clicked_signal(self) -> QtCore.Signal:
         """..."""
         return self.__clicked_signal
@@ -528,7 +519,6 @@ class CategoryButton(QtWidgets.QWidget):
             'background: transparent;')
         self.__body_layout.add_widget(self.__bottom_highlight_line)
 
-    @property
     def clicked_signal(self) -> QtCore.Signal:
         """..."""
         return self.__clicked_signal
@@ -637,7 +627,6 @@ class EnergyButton(QtWidgets.QWidget):
         self.__icon_view.set_pixmap(scaled_pixmap)
         self.__main_layout.add_widget(self.__icon_view)
 
-    @property
     def clicked_signal(self) -> QtCore.Signal:
         """..."""
         return self.__clicked_signal
@@ -682,7 +671,6 @@ class SearchApps(QtWidgets.QLineEdit):
             border: 0px;
             padding: 10px;""")
 
-    @QtCore.Slot()
     def mouse_press_event(self, event):
         """..."""
         if (event.button() == QtCore.Qt.LeftButton

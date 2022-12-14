@@ -125,7 +125,7 @@ class MainWindow(QtWidgets.QMainWindow):
         setattr(pagination_button, 'page_index', 0)
         pagination_button.set_check_state(state=True)
         self.__active_category_button = pagination_button
-        pagination_button.clicked_signal.connect(self.__on_category_button)
+        pagination_button.clicked_signal().connect(self.__on_category_button)
         self.__category_buttons_layout.add_widget(pagination_button)
 
         # Title
@@ -141,13 +141,13 @@ class MainWindow(QtWidgets.QMainWindow):
             desktop_file_list=self.__recent_apps.apps,
             columns_num=self.__app_grid_columns,
             empty_lines=1)
-        app_grid.clicked_signal.connect(
+        app_grid.clicked_signal().connect(
             lambda widget: self.__on_app_launcher_clicked_signal(
                 widget))
-        app_grid.enter_event_signal.connect(
+        app_grid.enter_event_signal().connect(
             lambda widget: self.__on_app_launcher_enter_event_signal(
                 widget))
-        app_grid.leave_event_signal.connect(
+        app_grid.leave_event_signal().connect(
             lambda _: self.__on_app_launcher_leave_event_signal())
         app_grid.set_alignment(QtCore.Qt.AlignTop)
         self.__home_page_layout.add_widget(app_grid, 4)
@@ -169,13 +169,13 @@ class MainWindow(QtWidgets.QMainWindow):
             desktop_file_list=self.__favorite_apps.apps,
             columns_num=self.__app_grid_columns,
             empty_lines=2)
-        app_grid.clicked_signal.connect(
+        app_grid.clicked_signal().connect(
             lambda widget: self.__on_app_launcher_clicked_signal(
                 widget))
-        app_grid.enter_event_signal.connect(
+        app_grid.enter_event_signal().connect(
             lambda widget: self.__on_app_launcher_enter_event_signal(
                 widget))
-        app_grid.leave_event_signal.connect(
+        app_grid.leave_event_signal().connect(
             lambda _: self.__on_app_launcher_leave_event_signal())
         app_grid.set_alignment(QtCore.Qt.AlignTop)
         self.__home_page_layout.add_widget(app_grid, 6)
@@ -197,7 +197,7 @@ class MainWindow(QtWidgets.QMainWindow):
             category_button = widgets.CategoryButton(
                 text=categ, icon_name=menu_schema.icons_schema[categ])
             setattr(category_button, 'page_index', page_index)
-            category_button.clicked_signal.connect(self.__on_category_button)
+            category_button.clicked_signal().connect(self.__on_category_button)
             self.__category_buttons_layout.add_widget(category_button)
 
             # Apps page
@@ -222,13 +222,13 @@ class MainWindow(QtWidgets.QMainWindow):
             # App grid
             app_grid = widgets.AppGrid(
                 desktop_file_list=apps, columns_num=self.__app_grid_columns)
-            app_grid.clicked_signal.connect(
+            app_grid.clicked_signal().connect(
                 lambda widget: self.__on_app_launcher_clicked_signal(
                     widget))
-            app_grid.enter_event_signal.connect(
+            app_grid.enter_event_signal().connect(
                 lambda widget: self.__on_app_launcher_enter_event_signal(
                     widget))
-            app_grid.leave_event_signal.connect(
+            app_grid.leave_event_signal().connect(
                 lambda _: self.__on_app_launcher_leave_event_signal())
             app_grid.set_alignment(QtCore.Qt.AlignTop)
             page_layout.add_widget(app_grid)
@@ -268,14 +268,14 @@ class MainWindow(QtWidgets.QMainWindow):
         # When the app is clicked, this method is triggered
         if str(widget) != '<GhostAppLauncher: Boo>':
             # Save app in "Recents"
-            if widget.desktop_file in self.__recent_apps.apps:
-                self.__recent_apps.apps.remove(widget.desktop_file)
+            if widget.desktop_file() in self.__recent_apps.apps:
+                self.__recent_apps.apps.remove(widget.desktop_file())
             else:
                 if self.__recent_apps.apps and (
                         len(self.__recent_apps.apps) >=
                         self.__app_grid_columns):
                     self.__recent_apps.apps.pop()
-            self.__recent_apps.apps.insert(0, widget.desktop_file)
+            self.__recent_apps.apps.insert(0, widget.desktop_file())
             self.__recent_apps.save_apps(
                 url_list_apps=[x.url for x in self.__recent_apps.apps])
         self.close()
@@ -285,24 +285,24 @@ class MainWindow(QtWidgets.QMainWindow):
         local, escope = (locale.getdefaultlocale()[0], '[Desktop Entry]')
 
         # Name
-        name = widget.desktop_file.content[escope]['Name']
-        if f'Name[{local}]' in widget.desktop_file.content[escope]:
-            name = widget.desktop_file.content[escope][f'Name[{local}]']
+        name = widget.desktop_file().content[escope]['Name']
+        if f'Name[{local}]' in widget.desktop_file().content[escope]:
+            name = widget.desktop_file().content[escope][f'Name[{local}]']
 
         # GenericName
         generic_name = ''
-        if f'GenericName[{local}]' in widget.desktop_file.content[escope]:
-            generic_name = widget.desktop_file.content[
+        if f'GenericName[{local}]' in widget.desktop_file().content[escope]:
+            generic_name = widget.desktop_file().content[
                 escope][f'GenericName[{local}]']
-        elif 'GenericName' in widget.desktop_file.content[escope]:
-            generic_name = widget.desktop_file.content[escope]['GenericName']
+        elif 'GenericName' in widget.desktop_file().content[escope]:
+            generic_name = widget.desktop_file().content[escope]['GenericName']
 
         # Coment
         coment = ''
-        if f'Comment[{local}]' in widget.desktop_file.content[escope]:
-            coment = widget.desktop_file.content[escope][f'Comment[{local}]']
-        elif 'Comment' in widget.desktop_file.content[escope]:
-            coment = widget.desktop_file.content[escope]['Comment']
+        if f'Comment[{local}]' in widget.desktop_file().content[escope]:
+            coment = widget.desktop_file().content[escope][f'Comment[{local}]']
+        elif 'Comment' in widget.desktop_file().content[escope]:
+            coment = widget.desktop_file().content[escope]['Comment']
 
         # Format text
         coment = (' | ' + coment if (
