@@ -106,6 +106,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__status_bar.set_style_sheet(
             'background: transparent; font-size: 13px;')
         self.__layout_container.add_widget(self.__status_bar)
+        self.set_focus()
+        self.install_event_filter(self)
 
     def __set_style(self):
         # Adds CSS styling to the main window
@@ -288,7 +290,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.__recent_apps.apps.insert(0, widget.desktop_file())
             self.__recent_apps.save_apps(
                 url_list_apps=[x.url for x in self.__recent_apps.apps])
-        print(f'Run "AppLauncher: {widget.desktop_file()}" and close')
+            print(f'Run "AppLauncher: {widget.desktop_file()}" and close')
+        print(f'Run "GhostAppLauncher" and close')
         self.close()
 
     def __on_app_launcher_enter_event(self, widget):
@@ -347,7 +350,30 @@ class MainWindow(QtWidgets.QMainWindow):
             print('Run "system-shutdown" and close')
         self.close()
 
+    def event_filter(self, widget, event):
+        """..."""
+        if event.type() == QtCore.QEvent.KeyPress and widget is self:
+            key = event.key()
+            text = event.text()
+
+            if key == QtCore.Qt.Key_Escape:
+                self.__search_input.clear()
+
+            if key == QtCore.Qt.Key_Return or key == QtCore.Qt.Key_Enter:
+                print("Enter key pressed")
+                focus_widget = QtWidgets.QApplication.focus_widget()
+
+                if isinstance(focus_widget, widgets.AppLauncher):
+                    print(focus_widget)
+                    self.close()
+            else:
+                self.__search_input.set_text(self.__search_input.text() + text)
+                self.__search_input.deselect()
+
+        return QtWidgets.QWidget.event_filter(self, widget, event)
+
     def mouse_press_event(self, event):
+        """..."""
         if event.button() == QtCore.Qt.LeftButton:
             print('MainWindow close')
             self.close()
