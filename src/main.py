@@ -142,13 +142,13 @@ class MainWindow(QtWidgets.QMainWindow):
             columns_num=self.__app_grid_columns,
             empty_lines=1)
         app_grid.clicked_signal().connect(
-            lambda widget: self.__on_app_launcher_clicked_signal(
+            lambda widget: self.__on_app_launcher(
                 widget))
         app_grid.enter_event_signal().connect(
-            lambda widget: self.__on_app_launcher_enter_event_signal(
+            lambda widget: self.__on_app_launcher_enter_event(
                 widget))
         app_grid.leave_event_signal().connect(
-            lambda _: self.__on_app_launcher_leave_event_signal())
+            lambda _: self.__on_app_launcher_leave_event())
         app_grid.set_alignment(QtCore.Qt.AlignTop)
         self.__home_page_layout.add_widget(app_grid, 4)
         # self.home_page_layout.add_stretch(1)
@@ -170,13 +170,13 @@ class MainWindow(QtWidgets.QMainWindow):
             columns_num=self.__app_grid_columns,
             empty_lines=2)
         app_grid.clicked_signal().connect(
-            lambda widget: self.__on_app_launcher_clicked_signal(
+            lambda widget: self.__on_app_launcher(
                 widget))
         app_grid.enter_event_signal().connect(
-            lambda widget: self.__on_app_launcher_enter_event_signal(
+            lambda widget: self.__on_app_launcher_enter_event(
                 widget))
         app_grid.leave_event_signal().connect(
-            lambda _: self.__on_app_launcher_leave_event_signal())
+            lambda _: self.__on_app_launcher_leave_event())
         app_grid.set_alignment(QtCore.Qt.AlignTop)
         self.__home_page_layout.add_widget(app_grid, 6)
 
@@ -223,13 +223,11 @@ class MainWindow(QtWidgets.QMainWindow):
             app_grid = widgets.AppGrid(
                 desktop_file_list=apps, columns_num=self.__app_grid_columns)
             app_grid.clicked_signal().connect(
-                lambda widget: self.__on_app_launcher_clicked_signal(
-                    widget))
+                lambda widget: self.__on_app_launcher(widget))
             app_grid.enter_event_signal().connect(
-                lambda widget: self.__on_app_launcher_enter_event_signal(
-                    widget))
+                lambda widget: self.__on_app_launcher_enter_event(widget))
             app_grid.leave_event_signal().connect(
-                lambda _: self.__on_app_launcher_leave_event_signal())
+                lambda _: self.__on_app_launcher_leave_event())
             app_grid.set_alignment(QtCore.Qt.AlignTop)
             page_layout.add_widget(app_grid)
 
@@ -237,21 +235,33 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Energy buttons
         lock_screen_button = widgets.EnergyButton('system-lock-screen')
+        lock_screen_button.clicked_signal().connect(
+            lambda widget: self.__on_energy_buttons(widget))
         self.__energy_buttons_layout.add_widget(lock_screen_button)
 
         log_out_button = widgets.EnergyButton('system-log-out')
+        log_out_button.clicked_signal().connect(
+            lambda widget: self.__on_energy_buttons(widget))
         self.__energy_buttons_layout.add_widget(log_out_button)
 
         system_suspend_button = widgets.EnergyButton('system-suspend')
+        system_suspend_button.clicked_signal().connect(
+            lambda widget: self.__on_energy_buttons(widget))
         self.__energy_buttons_layout.add_widget(system_suspend_button)
 
         # switch_user_button = widgets.EnergyButton('system-switch-user')
+        # switch_user_button.clicked_signal().connect(
+        #     lambda widget: self.__on_energy_buttons(widget))
         # self.energy_buttons_layout.add_widget(switch_user_button)
 
         reboot_button = widgets.EnergyButton('system-reboot')
+        reboot_button.clicked_signal().connect(
+            lambda widget: self.__on_energy_buttons(widget))
         self.__energy_buttons_layout.add_widget(reboot_button)
 
         shutdown_button = widgets.EnergyButton('system-shutdown')
+        shutdown_button.clicked_signal().connect(
+            lambda widget: self.__on_energy_buttons(widget))
         self.__energy_buttons_layout.add_widget(shutdown_button)
 
     def __on_category_button(self):
@@ -264,7 +274,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__app_grid_stacked_layout.set_current_index(
             self.sender().page_index)
 
-    def __on_app_launcher_clicked_signal(self, widget):
+    def __on_app_launcher(self, widget):
         # When the app is clicked, this method is triggered
         if str(widget) != '<GhostAppLauncher: Boo>':
             # Save app in "Recents"
@@ -278,9 +288,10 @@ class MainWindow(QtWidgets.QMainWindow):
             self.__recent_apps.apps.insert(0, widget.desktop_file())
             self.__recent_apps.save_apps(
                 url_list_apps=[x.url for x in self.__recent_apps.apps])
+        print(f'Run "AppLauncher: {widget.desktop_file()}" and close')
         self.close()
 
-    def __on_app_launcher_enter_event_signal(self, widget):
+    def __on_app_launcher_enter_event(self, widget):
         # Add status bar info
         local, escope = (locale.getdefaultlocale()[0], '[Desktop Entry]')
 
@@ -317,8 +328,29 @@ class MainWindow(QtWidgets.QMainWindow):
         text = f'{name.strip(":").strip(".")}{generic_name}{coment}'
         self.__status_bar.set_text(text)
 
-    def __on_app_launcher_leave_event_signal(self):
+    def __on_app_launcher_leave_event(self):
         self.__status_bar.set_text(' ')
+
+    def __on_energy_buttons(self, widget):
+        # ...
+        if widget.name_id() == 'system-lock-screen':
+            print('Run "system-lock-screen" and close')
+        elif widget.name_id() == 'system-log-out':
+            print('Run "system-log-out" and close')
+        elif widget.name_id() == 'system-suspend':
+            print('Run "system-suspend" and close')
+        elif widget.name_id() == 'system-switch-user':
+            print('Run "system-switch-user" and close')
+        elif widget.name_id() == 'system-reboot':
+            print('Run "system-reboot" and close')
+        elif widget.name_id() == 'system-shutdown':
+            print('Run "system-shutdown" and close')
+        self.close()
+
+    def mouse_press_event(self, event):
+        if event.button() == QtCore.Qt.LeftButton:
+            print('MainWindow close')
+            self.close()
 
 
 class Application(object):

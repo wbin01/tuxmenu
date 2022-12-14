@@ -561,7 +561,6 @@ class CategoryButton(QtWidgets.QWidget):
         """
         if event.button() == QtCore.Qt.LeftButton:
             self.__clicked_signal.emit(self)
-            event.ignore()
 
     def enter_event(self, event) -> None:
         """Mouse hover event
@@ -592,10 +591,14 @@ class EnergyButton(QtWidgets.QWidget):
     """
     __clicked_signal = QtCore.Signal(object)
 
-    def __init__(self, icon_name: str, *args, **kwargs) -> None:
+    def __init__(
+            self,
+            icon_name: str, name_id: str = None,
+            *args, **kwargs) -> None:
         """Class constructor."""
         super().__init__(*args, **kwargs)
         self.__icon_name = icon_name
+        self.__name_id = name_id if name_id else self.__icon_name
 
         self.__main_layout = QtWidgets.QVBoxLayout()
         self.__main_layout.set_contents_margins(0, 0, 0, 0)
@@ -627,6 +630,14 @@ class EnergyButton(QtWidgets.QWidget):
         self.__icon_view.set_pixmap(scaled_pixmap)
         self.__main_layout.add_widget(self.__icon_view)
 
+    def name_id(self) -> str:
+        """..."""
+        return self.__name_id
+
+    def icon_name(self) -> str:
+        """..."""
+        return self.__icon_name
+
     def clicked_signal(self) -> QtCore.Signal:
         """..."""
         return self.__clicked_signal
@@ -638,7 +649,6 @@ class EnergyButton(QtWidgets.QWidget):
         """
         if event.button() == QtCore.Qt.LeftButton:
             self.__clicked_signal.emit(self)
-            event.ignore()
 
     def enter_event(self, event) -> None:
         """Mouse hover event
