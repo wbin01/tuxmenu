@@ -15,7 +15,10 @@ import widgets
 
 class MainWindow(QtWidgets.QMainWindow):
     """App window instance."""
-    __mount_body_signal = QtCore.Signal(object)
+    __mount_recent_apps_signal = QtCore.Signal(object)
+    __mount_favorite_apps_signal = QtCore.Signal(object)
+    __mount_apps_signal = QtCore.Signal(object)
+    __mount_energy_buttons_signal = QtCore.Signal(object)
 
     def __init__(self, *args, **kwargs):
         """Class constructor."""
@@ -76,12 +79,26 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__app_grid_stacked_layout.add_widget(self.__home_page_container)
         self.__home_page_container.set_layout(self.__home_page_layout)
 
+        # Recent apps page
         self.__recent_apps = attachments.SavedApps(config_name='recent-apps')
-        self.__mount_recent_apps_grid()
+        self.__mount_recent_apps_signal.connect(self.__mount_recent_apps)
+        self.__recent_apps_thread = threading.Thread(
+            target=self.__mount_recent_apps_thread)
+        self.__recent_apps_thread.start()
 
+        # Favorite apps page
         self.__favorite_apps = attachments.SavedApps(
             config_name='favorite-apps')
-        self.__mount_favorite_apps_grid()
+        self.__mount_favorite_apps_signal.connect(self.__mount_favorite_apps)
+        self.__favorite_apps_thread = threading.Thread(
+            target=self.__mount_favorite_apps_thread)
+        # self.__favorite_apps_thread.start(): Start on 'recent apps thread'
+
+        # Apps pages thread
+        self.__mount_apps_signal.connect(self.__mount_apps)
+        self.__apps_thread = threading.Thread(
+            target=self.__mount_apps_thread)
+        # self.__apps_thread.start(): Start on 'favorite apps thread'
 
         # Energy buttons layout
         self.__energy_buttons_layout = QtWidgets.QVBoxLayout()
@@ -89,12 +106,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__energy_buttons_layout.set_spacing(10)
         self.__energy_buttons_layout.set_alignment(QtCore.Qt.AlignCenter)
         self.__app_pagination_layout.add_layout(self.__energy_buttons_layout)
-
-        # Grid pages thread
-        self.__mount_body_signal.connect(self.__mount_body)
-        self.__mount_body_thread = threading.Thread(
-            target=self.__mount_body_thread)
-        self.__mount_body_thread.start()
 
         # Status bar
         self.__status_bar = QtWidgets.QLabel(' ')
@@ -116,7 +127,12 @@ class MainWindow(QtWidgets.QMainWindow):
             _style = f.read()
             self.set_style_sheet(_style)
 
-    def __mount_recent_apps_grid(self):
+    def __mount_recent_apps_thread(self):
+        # ...
+        time.sleep(0.05)
+        self.__mount_recent_apps_signal.emit(0)
+
+    def __mount_recent_apps(self):
         # ...
 
         # Category buttons pagination
@@ -154,7 +170,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__home_page_layout.add_widget(app_grid, 4)
         # self.home_page_layout.add_stretch(1)
 
-    def __mount_favorite_apps_grid(self):
+        # Favorite apps
+        self.__favorite_apps_thread.start()
+
+    def __mount_favorite_apps_thread(self):
+        # ...
+        time.sleep(0.05)
+        self.__mount_favorite_apps_signal.emit(0)
+
+    def __mount_favorite_apps(self):
         # ...
 
         # Title
@@ -181,12 +205,15 @@ class MainWindow(QtWidgets.QMainWindow):
         app_grid.set_alignment(QtCore.Qt.AlignTop)
         self.__home_page_layout.add_widget(app_grid, 6)
 
-    def __mount_body_thread(self):
+        # All apps
+        self.__apps_thread.start()
+
+    def __mount_apps_thread(self):
         # Wait for the main window to render to assemble the app grid
         time.sleep(0.05)
-        self.__mount_body_signal.emit(0)
+        self.__mount_apps_signal.emit(0)
 
-    def __mount_body(self):
+    def __mount_apps(self):
         # Mount app grid
         menu_schema = attachments.MenuSchema()
         page_index = 1
@@ -194,6 +221,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if not apps:
                 continue
             apps.sort()
+
             # Category buttons pagination
             category_button = widgets.CategoryButton(
                 text=categ, icon_name=menu_schema.icons_schema[categ])
@@ -222,16 +250,18 @@ class MainWindow(QtWidgets.QMainWindow):
 
             # App grid
             app_grid = widgets.AppGrid(
-                desktop_file_list=apps, columns_num=self.__app_grid_columns)
+                desktop_file_list=apps,
+                columns_num=self.__app_grid_columns)
+
             app_grid.clicked_signal().connect(
                 lambda widget: self.__on_app_launcher(widget))
             app_grid.enter_event_signal().connect(
                 lambda widget: self.__on_app_launcher_enter_event(widget))
             app_grid.leave_event_signal().connect(
                 lambda _: self.__on_app_launcher_leave_event())
+
             app_grid.set_alignment(QtCore.Qt.AlignTop)
             page_layout.add_widget(app_grid)
-
             page_index += 1
 
         # Energy buttons

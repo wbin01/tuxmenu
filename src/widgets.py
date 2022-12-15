@@ -19,7 +19,7 @@ class AppGrid(QtWidgets.QScrollArea):
     __clicked_signal = QtCore.Signal(object)
     __enter_event_signal = QtCore.Signal(object)
     __leave_event_signal = QtCore.Signal(object)
-    __mount_app_launcher_signal = QtCore.Signal(object)
+    __mount_grid_signal = QtCore.Signal(object)
 
     def __init__(
             self,
@@ -60,13 +60,10 @@ class AppGrid(QtWidgets.QScrollArea):
 
         # Grid creation
         self.__line_layout = None
-
-        mount_app_launcher_thread = threading.Thread(
+        mount_grid_thread = threading.Thread(
             target=self.__mount_grid_thread)
-        mount_app_launcher_thread.start()
-
-        self.__mount_app_launcher_signal.connect(
-            self.__mount_grid)
+        mount_grid_thread.start()
+        self.__mount_grid_signal.connect(self.__mount_grid)
 
     def clicked_signal(self) -> QtCore.Signal:
         """..."""
@@ -82,12 +79,8 @@ class AppGrid(QtWidgets.QScrollArea):
 
     def __mount_grid_thread(self) -> None:
         # Wait for the widget to render to assemble the app launcher
-        if len(self.__desktop_file_list) < 10:
-            time.sleep(0.01)
-            self.__mount_app_launcher_signal.emit(0)
-        else:
-            time.sleep(0.07)
-            self.__mount_app_launcher_signal.emit(0)
+        time.sleep(0.05)
+        self.__mount_grid_signal.emit(0)
 
     def __mount_grid(self) -> None:
         # Mount app launcher
