@@ -42,6 +42,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__search_input.set_contents_margins(200, 0, 200, 0)
         self.__search_input.set_placeholder_text('Type to search')
         self.__search_input.set_alignment(QtCore.Qt.AlignHCenter)
+        self.__search_input.text_changed.connect(self.__on_search_input)
         self.__layout_container.add_widget(self.__search_input)
 
         # App pagination layout
@@ -294,6 +295,11 @@ class MainWindow(QtWidgets.QMainWindow):
         shutdown_button.clicked_signal().connect(
             lambda widget: self.__on_energy_buttons(widget))
         self.__energy_buttons_layout.add_widget(shutdown_button)
+
+    def __on_search_input(self, text):
+        # ...
+        print(text)
+        print(self.__search_input.text())
 
     def __on_category_button(self):
         # Active category button state (highlight fixed)
