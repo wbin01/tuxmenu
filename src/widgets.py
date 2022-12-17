@@ -683,7 +683,7 @@ class EnergyButton(QtWidgets.QWidget):
 
 class SearchApps(QtWidgets.QLineEdit):
     """..."""
-    text_changed = QtCore.Signal(object)
+    __text_changed = QtCore.Signal(object)
 
     def __init__(self, *args, **kwargs):
         """..."""
@@ -694,7 +694,10 @@ class SearchApps(QtWidgets.QLineEdit):
             background: transparent;
             border: 0px;
             padding: 10px;""")
-        self.textChanged.connect(lambda text: self.text_changed.emit(text))
+        self.textChanged.connect(lambda text: self.__text_changed.emit(text))
+
+    def text_changed_signal(self) -> QtCore.Signal:
+        return self.__text_changed
 
     def mouse_press_event(self, event):
         """..."""

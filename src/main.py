@@ -37,12 +37,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__layout_container.set_spacing(0)
         self.__main_container.set_layout(self.__layout_container)
 
-        # Search
+        # Search input
         self.__search_input = widgets.SearchApps()
         self.__search_input.set_contents_margins(200, 0, 200, 0)
         self.__search_input.set_placeholder_text('Type to search')
         self.__search_input.set_alignment(QtCore.Qt.AlignHCenter)
-        self.__search_input.text_changed.connect(self.__on_search_input)
+        self.__search_input.text_changed_signal().connect(
+            self.__on_search_input)
         self.__layout_container.add_widget(self.__search_input)
 
         # App pagination layout
@@ -66,7 +67,21 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__app_grid_stacked_layout.set_alignment(QtCore.Qt.AlignTop)
         self.__app_pagination_layout.add_layout(self.__app_grid_stacked_layout)
 
-        # Home grid page
+        # Searched apps page
+        self.__searched_apps_page_container = QtWidgets.QWidget()
+        self.__searched_apps_page_container.set_contents_margins(0, 0, 0, 0)
+        self.__searched_apps_page_container.set_style_sheet(
+            'background: transparent;')
+        self.__app_grid_stacked_layout.add_widget(
+            self.__searched_apps_page_container)
+
+        self.__searched_apps_layout = QtWidgets.QVBoxLayout()
+        self.__searched_apps_layout.set_contents_margins(0, 0, 0, 0)
+        self.__searched_apps_layout.set_spacing(0)
+        self.__searched_apps_page_container.set_layout(
+            self.__searched_apps_layout)
+
+        # Home page (Recents and Favorite apps)
         self.__app_grid_columns = 5
 
         self.__home_page_layout = QtWidgets.QVBoxLayout()
@@ -140,7 +155,7 @@ class MainWindow(QtWidgets.QMainWindow):
         pagination_button = widgets.CategoryButton(
             text='Favorite',
             icon_name='preferences-desktop-default-applications')
-        setattr(pagination_button, 'page_index', 0)
+        setattr(pagination_button, 'page_index', 1)
         pagination_button.set_check_state(state=True)
         self.__active_category_button = pagination_button
         pagination_button.clicked_signal().connect(self.__on_category_button)
@@ -172,6 +187,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.home_page_layout.add_stretch(1)
 
         # Favorite apps
+        self.__app_grid_stacked_layout.set_current_index(1)
         self.__favorite_apps_thread.start()
 
     def __mount_favorite_apps_thread(self):
@@ -217,7 +233,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def __mount_apps(self):
         # Mount app grid
         menu_schema = attachments.MenuSchema()
-        page_index = 1
+        page_index = 2
         for categ, apps in menu_schema.schema.items():
             if not apps:
                 continue
@@ -298,21 +314,33 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __on_search_input(self, text) -> None:
         # ...
-        (self.__lock_side_panels(True) if text
-            else self.__lock_side_panels(False))
+        def show_searched_apps_page(show: bool) -> None:
+            # Back to home category (Recents and Favorite)
+            first_button = self.__category_buttons_layout.item_at(0).widget()
+            if not first_button.check_state():
+                first_button.clicked_signal().emit(0)
 
-    def __lock_side_panels(self, block: bool) -> None:
-        enabled = False if block else True
+            # Show 'Searched apps' page
+            self.__app_grid_stacked_layout.set_current_index(0 if show else 1)
 
-        for index in range(self.__category_buttons_layout.count()):
-            item = self.__category_buttons_layout.item_at(index)
-            item.widget().set_enabled(enabled)
-            item.widget().set_enter_event_enabled(enabled)
+            # Block Category buttons and Energy buttons
+            enabled_status = False if show else True
+            for index in range(self.__category_buttons_layout.count()):
+                item = self.__category_buttons_layout.item_at(index)
+                item.widget().set_enabled(enabled_status)
+                item.widget().set_enter_event_enabled(enabled_status)
 
-        for index in range(self.__energy_buttons_layout.count()):
-            item = self.__energy_buttons_layout.item_at(index)
-            item.widget().set_enabled(enabled)
-            item.widget().set_enter_event_enabled(enabled)
+            for index in range(self.__energy_buttons_layout.count()):
+                item = self.__energy_buttons_layout.item_at(index)
+                item.widget().set_enabled(enabled_status)
+                item.widget().set_enter_event_enabled(enabled_status)
+
+        if text:
+            if self.__category_buttons_layout.item_at(0).widget().is_visible():
+                show_searched_apps_page(True)
+                self.__searched_apps_layout.add_widget(QtWidgets.QLabel(text))
+        else:
+            show_searched_apps_page(False)
 
     def __on_category_button(self):
         # Active category button state (highlight fixed)
