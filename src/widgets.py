@@ -449,6 +449,7 @@ class CategoryButton(QtWidgets.QWidget):
         self.__text = text
         self.__icon_name = icon_name
         self.__state = False
+        self.__enter_event_enabled = True
 
         self.__main_layout = QtWidgets.QVBoxLayout()
         self.__main_layout.set_contents_margins(0, 0, 0, 0)
@@ -498,6 +499,7 @@ class CategoryButton(QtWidgets.QWidget):
             icon_view.set_style_sheet('background-color: transparent;')
             self.__text_layout.add_widget(icon_view)
 
+        # Text
         self.__text = QtWidgets.QLabel(self.__text)
         self.__text.set_contents_margins(20, 10, 5, 10)
         self.__text.set_style_sheet("""
@@ -547,6 +549,14 @@ class CategoryButton(QtWidgets.QWidget):
             self.__bottom_highlight_line.set_style_sheet("""
                 background: transparent;""")
 
+    def text(self) -> str:
+        """..."""
+        return self.__text.text()
+
+    def set_enter_event_enabled(self, disbled: bool) -> None:
+        """..."""
+        self.__enter_event_enabled = disbled
+
     def mouse_press_event(self, event) -> None:
         """Mouse click event on the widget.
 
@@ -560,21 +570,23 @@ class CategoryButton(QtWidgets.QWidget):
 
         Highlight colors when mouse hovers over widget.
         """
-        if not self.__state:
-            self.__main_container.set_style_sheet("""
-                background-color: rgba(255, 255, 255, 0.05);""")
-        self.__clicked_signal.emit(self)
-        event.ignore()
+        if self.__enter_event_enabled:
+            if not self.__state:
+                self.__main_container.set_style_sheet("""
+                    background-color: rgba(255, 255, 255, 0.05);""")
+            self.__clicked_signal.emit(self)
+            event.ignore()
 
     def leave_event(self, event) -> None:
         """Mouse-over event outside the widget
 
         Remove highlighting colors when the mouse leaves the widget.
         """
-        if not self.__state:
-            self.__main_container.set_style_sheet("""
-                background: transparent;""")
-        event.ignore()
+        if self.__enter_event_enabled:
+            if not self.__state:
+                self.__main_container.set_style_sheet("""
+                    background: transparent;""")
+            event.ignore()
 
 
 class EnergyButton(QtWidgets.QWidget):
@@ -592,6 +604,7 @@ class EnergyButton(QtWidgets.QWidget):
         super().__init__(*args, **kwargs)
         self.__icon_name = icon_name
         self.__name_id = name_id if name_id else self.__icon_name
+        self.__enter_event_enabled = True
 
         self.__main_layout = QtWidgets.QVBoxLayout()
         self.__main_layout.set_contents_margins(0, 0, 0, 0)
@@ -631,6 +644,10 @@ class EnergyButton(QtWidgets.QWidget):
         """..."""
         return self.__icon_name
 
+    def set_enter_event_enabled(self, disbled: bool) -> None:
+        """..."""
+        self.__enter_event_enabled = disbled
+
     def clicked_signal(self) -> QtCore.Signal:
         """..."""
         return self.__clicked_signal
@@ -648,9 +665,10 @@ class EnergyButton(QtWidgets.QWidget):
 
         Highlight colors when mouse hovers over widget.
         """
-        self.__icon_view.set_style_sheet("""
-            border-radius: 40px;
-            background-color: rgba(255, 255, 255, 0.05);""")
+        if self.__enter_event_enabled:
+            self.__icon_view.set_style_sheet("""
+                border-radius: 40px;
+                background-color: rgba(255, 255, 255, 0.05);""")
         event.ignore()
 
     def leave_event(self, event) -> None:
@@ -658,7 +676,8 @@ class EnergyButton(QtWidgets.QWidget):
 
         Remove highlighting colors when the mouse leaves the widget.
         """
-        self.__icon_view.set_style_sheet('background: transparent;')
+        if self.__enter_event_enabled:
+            self.__icon_view.set_style_sheet('background: transparent;')
         event.ignore()
 
 

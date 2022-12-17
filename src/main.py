@@ -296,10 +296,23 @@ class MainWindow(QtWidgets.QMainWindow):
             lambda widget: self.__on_energy_buttons(widget))
         self.__energy_buttons_layout.add_widget(shutdown_button)
 
-    def __on_search_input(self, text):
+    def __on_search_input(self, text) -> None:
         # ...
-        print(text)
-        print(self.__search_input.text())
+        (self.__lock_side_panels(True) if text
+            else self.__lock_side_panels(False))
+
+    def __lock_side_panels(self, block: bool) -> None:
+        enabled = False if block else True
+
+        for index in range(self.__category_buttons_layout.count()):
+            item = self.__category_buttons_layout.item_at(index)
+            item.widget().set_enabled(enabled)
+            item.widget().set_enter_event_enabled(enabled)
+
+        for index in range(self.__energy_buttons_layout.count()):
+            item = self.__energy_buttons_layout.item_at(index)
+            item.widget().set_enabled(enabled)
+            item.widget().set_enter_event_enabled(enabled)
 
     def __on_category_button(self):
         # Active category button state (highlight fixed)
