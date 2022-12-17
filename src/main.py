@@ -24,6 +24,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """Class constructor."""
         super().__init__(*args, **kwargs)
         self.__set_style()
+        self.__menu_schema = None
 
         # Main container
         self.__main_container = QtWidgets.QWidget()
@@ -67,19 +68,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__app_grid_stacked_layout.set_alignment(QtCore.Qt.AlignTop)
         self.__app_pagination_layout.add_layout(self.__app_grid_stacked_layout)
 
-        # Searched apps page
-        self.__searched_apps_page_container = QtWidgets.QWidget()
-        self.__searched_apps_page_container.set_contents_margins(0, 0, 0, 0)
-        self.__searched_apps_page_container.set_style_sheet(
-            'background: transparent;')
-        self.__app_grid_stacked_layout.add_widget(
-            self.__searched_apps_page_container)
-
-        self.__searched_apps_layout = QtWidgets.QVBoxLayout()
-        self.__searched_apps_layout.set_contents_margins(0, 0, 0, 0)
-        self.__searched_apps_layout.set_spacing(0)
-        self.__searched_apps_page_container.set_layout(
-            self.__searched_apps_layout)
+        # Searched apps page (temp 0 index)
+        self.__app_grid_stacked_layout.add_widget(QtWidgets.QWidget())
 
         # Home page (Recents and Favorite apps)
         self.__app_grid_columns = 5
@@ -232,16 +222,16 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __mount_apps(self):
         # Mount app grid
-        menu_schema = attachments.MenuSchema()
+        self.__menu_schema = attachments.MenuSchema()
         page_index = 2
-        for categ, apps in menu_schema.schema.items():
+        for categ, apps in self.__menu_schema.schema.items():
             if not apps:
                 continue
             apps.sort()
 
             # Category buttons pagination
             category_button = widgets.CategoryButton(
-                text=categ, icon_name=menu_schema.icons_schema[categ])
+                text=categ, icon_name=self.__menu_schema.icons_schema[categ])
             setattr(category_button, 'page_index', page_index)
             category_button.clicked_signal().connect(self.__on_category_button)
             self.__category_buttons_layout.add_widget(category_button)
@@ -336,10 +326,99 @@ class MainWindow(QtWidgets.QMainWindow):
                 item.widget().set_enter_event_enabled(enabled_status)
 
         if text:
-            if self.__category_buttons_layout.item_at(0).widget().is_visible():
+            if self.__category_buttons_layout.item_at(0).widget().is_enabled():
                 show_searched_apps_page(True)
-                self.__searched_apps_layout.add_widget(QtWidgets.QLabel(text))
-        else:
+
+            desktop_apps = []
+            local = locale.getdefaultlocale()[0]
+            escope = '[Desktop Entry]'
+            for desk_app in self.__menu_schema.schema['All']:
+
+                # Name[<local>]
+                if (f'Name[{local}]' in desk_app.content[escope]
+                        and text in desk_app.content[escope][
+                            f'Name[{local}]'].lower()):
+                    desktop_apps.append(desk_app)
+
+                # Name: Always exists
+                elif text in desk_app.content[escope]['Name'].lower():
+                    desktop_apps.append(desk_app)
+
+                # GenericName[<local>]
+                elif (f'GenericName[{local}]' in desk_app.content[escope]
+                      and text in desk_app.content[escope][
+                            f'GenericName[{local}]'].lower()):
+                    desktop_apps.append(desk_app)
+
+                # GenericName
+                elif ('GenericName' in desk_app.content[escope]
+                        and text in desk_app.content[escope][
+                          'GenericName'].lower()):
+                    desktop_apps.append(desk_app)
+
+                # Coment[<local>]
+                elif (f'Comment[{local}]' in desk_app.content[escope]
+                        and text in desk_app.content[escope][
+                            f'Comment[{local}]'].lower()):
+                    desktop_apps.append(desk_app)
+
+                # Coment
+                elif ('Comment' in desk_app.content[escope]
+                        and text in desk_app.content[escope]['Comment']
+                        .lower()):
+                    desktop_apps.append(desk_app)
+
+                # Exec: Always exists
+                elif text in desk_app.content[escope]['Exec'].lower():
+                    desktop_apps.append(desk_app)
+
+            if desktop_apps:
+                # Total apps per search
+                total_apps_per_search = self.__app_grid_columns * 4
+                if len(desktop_apps) > total_apps_per_search:
+                    desktop_apps = desktop_apps[:total_apps_per_search]
+
+                # Clear old apps page
+                self.__app_grid_stacked_layout.set_current_index(0)
+                self.__app_grid_stacked_layout.remove_widget(
+                    self.__app_grid_stacked_layout.current_widget())
+
+                # Create new apps page
+                app_grid = widgets.AppGrid(
+                    desktop_file_list=desktop_apps,
+                    columns_num=self.__app_grid_columns)
+                app_grid.clicked_signal().connect(
+                    lambda widget: self.__on_app_launcher(
+                        widget))
+                app_grid.enter_event_signal().connect(
+                    lambda widget: self.__on_app_launcher_enter_event(
+                        widget))
+                app_grid.leave_event_signal().connect(
+                    lambda _: self.__on_app_launcher_leave_event())
+                app_grid.set_alignment(QtCore.Qt.AlignTop)
+
+                # Insert new apps page
+                self.__app_grid_stacked_layout.insert_widget(0, app_grid)
+                self.__app_grid_stacked_layout.set_current_index(0)
+
+            else:
+                # Clear old apps page
+                self.__app_grid_stacked_layout.set_current_index(0)
+                self.__app_grid_stacked_layout.remove_widget(
+                    self.__app_grid_stacked_layout.current_widget())
+
+                # Message
+                no_apps_message = QtWidgets.QLabel('No apps found!')
+                no_apps_message.set_alignment(QtCore.Qt.AlignCenter)
+                no_apps_message.set_style_sheet(
+                    'background: transparent; font-size: 30px;')
+
+                # Insert message
+                self.__app_grid_stacked_layout.insert_widget(
+                    0, no_apps_message)
+                self.__app_grid_stacked_layout.set_current_index(0)
+
+        else:  # Restore default menu layout
             show_searched_apps_page(False)
 
     def __on_category_button(self):
