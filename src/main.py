@@ -220,7 +220,7 @@ class MainWindow(QtWidgets.QMainWindow):
         app_grid.set_alignment(QtCore.Qt.AlignTop)
         self.__home_page_layout.add_widget(app_grid, 6)
 
-        # All apps
+        # Category buttons
         self.__category_buttons_thread.start()
 
     def __mount_category_buttons_thread(self):
@@ -232,7 +232,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__menu_schema = attachments.MenuSchema()
         page_index = 2
         for categ, apps in self.__menu_schema.schema.items():
-            if not apps:
+            if not apps or categ == 'All':
                 continue
 
             # Category buttons pagination
@@ -254,16 +254,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def __mount_apps(self):
         # Mount app grid
         for categ, apps in self.__menu_schema.schema.items():
-            if not apps:
+            if not apps or categ == 'All':
                 continue
             apps.sort()
-
-            # # Category buttons pagination
-            # category_button = widgets.CategoryButton(
-            #     text=categ, icon_name=self.__menu_schema.icons_schema[categ])
-            # setattr(category_button, 'page_index', page_index)
-            # category_button.clicked_signal().connect(self.__on_category_button)
-            # self.__category_buttons_layout.add_widget(category_button)
 
             # Apps page
             page = QtWidgets.QWidget()
@@ -542,18 +535,19 @@ class MainWindow(QtWidgets.QMainWindow):
 
             if key == QtCore.Qt.Key_Escape:
                 self.__search_input.clear()
-                text = ''  # Fix espace
+                # text = ''  # Fix espace
 
-            if key == QtCore.Qt.Key_Return or key == QtCore.Qt.Key_Enter:
+            elif key == QtCore.Qt.Key_Return or key == QtCore.Qt.Key_Enter:
                 print("Enter key pressed")
                 # focus_widget = QtWidgets.QApplication.focus_widget()
                 # if isinstance(focus_widget, widgets.AppLauncher):
                 #     print(focus_widget)
                 #     self.close()
 
-            if key == QtCore.Qt.Key_Backspace:
+            elif key == QtCore.Qt.Key_Backspace:
                 self.__search_input.set_text(self.__search_input.text()[:-1])
-            else:
+
+            elif key != QtCore.Qt.Key_Tab:
                 self.__search_input.set_text(self.__search_input.text() + text)
             self.__search_input.deselect()
 

@@ -36,6 +36,7 @@ class AppGrid(QtWidgets.QScrollArea):
         self.__desktop_file_list = desktop_file_list
         self.__columns_num = columns_num
         self.__empty_lines = empty_lines
+        self.__first_app_launcher = None  # Not use
 
         # Style
         self.set_alignment(QtCore.Qt.AlignTop)
@@ -60,10 +61,12 @@ class AppGrid(QtWidgets.QScrollArea):
 
         # Grid creation
         self.__line_layout = None
-        mount_grid_thread = threading.Thread(
-            target=self.__mount_grid_thread)
-        mount_grid_thread.start()
         self.__mount_grid_signal.connect(self.__mount_grid)
+        mount_grid_thread = threading.Thread(target=self.__mount_grid_thread)
+        mount_grid_thread.start()
+
+    def first_app_launcher(self) -> QtWidgets.QWidget:
+        return self.__first_app_launcher
 
     def clicked_signal(self) -> QtCore.Signal:
         """..."""
@@ -96,11 +99,13 @@ class AppGrid(QtWidgets.QScrollArea):
                 self.__line_layout.set_spacing(0)
                 self.__main_layout.add_layout(self.__line_layout)
 
+            no_thread = False
             if len(self.__desktop_file_list) < 7:
-                app_launcher = AppLauncher(
-                    desktop_file=desktop_file, no_thread=True)
-            else:
-                app_launcher = AppLauncher(desktop_file=desktop_file)
+                no_thread = True
+
+            app_launcher = AppLauncher(
+                desktop_file=desktop_file,
+                no_thread=no_thread)
             app_launcher.clicked_signal().connect(
                 self.__on_app_launcher_clicked_signal)
             app_launcher.enter_event_signal().connect(
@@ -197,14 +202,24 @@ class AppLauncher(QtWidgets.QWidget):
         self.__main_layout.set_spacing(0)
         self.set_layout(self.__main_layout)
 
-        self.__main_container = QtWidgets.QWidget()
-        self.__main_container.set_style_sheet(self.__style_sheet)
-        self.__main_layout.add_widget(self.__main_container)
+        # Body
+        self.__body_container = QtWidgets.QWidget()
+        self.__body_container.set_style_sheet(self.__style_sheet)
+        self.__main_layout.add_widget(self.__body_container)
 
-        # Body layout
         self.__body_layout = QtWidgets.QVBoxLayout()
         self.__body_layout.set_contents_margins(0, 30, 0, 0)
-        self.__main_container.set_layout(self.__body_layout)
+        self.__body_container.set_layout(self.__body_layout)
+
+        # Context
+        self.__contex_container = QtWidgets.QWidget()
+        self.__contex_container.set_visible(False)
+        self.__contex_container.set_style_sheet(self.__style_sheet)
+        self.__main_layout.add_widget(self.__contex_container)
+
+        self.__context_layout = QtWidgets.QVBoxLayout()
+        self.__context_layout.set_contents_margins(0, 0, 0, 0)
+        self.__contex_container.set_layout(self.__context_layout)
 
         # Accent
         self.__bottom_highlight_line = QtWidgets.QWidget()
@@ -242,7 +257,7 @@ class AppLauncher(QtWidgets.QWidget):
 
     def __mount_app_launcher_thread(self) -> None:
         # Wait for the widget to render to assemble the app launcher body
-        time.sleep(0.1)
+        time.sleep(0.05)
         self.__mount_app_launcher_signal.emit(0)
 
     def __mount_app_launcher(self) -> None:
@@ -294,6 +309,10 @@ class AppLauncher(QtWidgets.QWidget):
         app_name_layout.add_widget(app_name)
         self.__body_layout.add_layout(app_name_layout)
 
+        # Context
+        context = AppLauncherContextMenu()
+        self.__context_layout.add_widget(context)
+
         # Accent
         self.__bottom_highlight_line.set_style_sheet(self.__style_sheet)
         self.__bottom_highlight_line.set_fixed_height(5)
@@ -304,7 +323,7 @@ class AppLauncher(QtWidgets.QWidget):
         Highlight colors when mouse hovers over widget.
         """
 
-        self.__main_container.set_style_sheet(self.__style_sheet_hover)
+        self.__body_container.set_style_sheet(self.__style_sheet_hover)
         self.__bottom_highlight_line.set_style_sheet(
             'background-color: rgba(255, 255, 255, 0.3);')
         self.__enter_event_signal.emit(self)
@@ -315,7 +334,7 @@ class AppLauncher(QtWidgets.QWidget):
 
         Remove highlighting colors when the mouse leaves the widget.
         """
-        self.__main_container.set_style_sheet(self.__style_sheet)
+        self.__body_container.set_style_sheet(self.__style_sheet)
         self.__bottom_highlight_line.set_style_sheet(self.__style_sheet)
         self.__leave_event_signal.emit(self)
         event.ignore()
@@ -329,6 +348,11 @@ class AppLauncher(QtWidgets.QWidget):
             self.__clicked_signal.emit(self)
         elif event.button() == QtCore.Qt.RightButton:
             print(self.__desktop_file, 'Right click')
+
+            if not self.__contex_container.is_visible():
+                self.__body_container.set_visible(False)
+                self.__contex_container.set_visible(True)
+
             self.__right_clicked_signal.emit(self)
 
     def paint_event(self, event):
@@ -356,6 +380,51 @@ class AppLauncher(QtWidgets.QWidget):
 
     def __str__(self) -> str:
         return str(self.__desktop_file)
+
+
+class AppLauncherContextMenu(QtWidgets.QWidget):
+    """..."""
+    __clicked_signal = QtCore.Signal(object)
+
+    def __init__(self, *args, **kwargs) -> None:
+        """Class constructor."""
+        super().__init__(*args, **kwargs)
+        self.set_style_sheet('background-color: rgba(100, 100, 100, 0.05);')
+
+        # Main layout
+        self.__layout_container = QtWidgets.QVBoxLayout()
+        self.__layout_container.set_alignment(QtCore.Qt.AlignCenter)
+        self.__layout_container.set_contents_margins(0, 0, 0, 0)
+        self.__layout_container.set_spacing(0)
+        self.set_layout(self.__layout_container)
+
+        body = QtWidgets.QWidget()
+        body.set_size_policy(
+            QtWidgets.QSizePolicy.Expanding,
+            QtWidgets.QSizePolicy.Expanding)
+        self.__layout_container.add_widget(body)
+
+        body_layout = QtWidgets.QVBoxLayout()
+        body_layout.set_contents_margins(5, 5, 5, 5)
+        body_layout.set_spacing(2)
+        body.set_layout(body_layout)
+
+        # Back buttons
+        back = AppLauncherContextMenuButton(text=' ', icon_name='go-previous')
+        body_layout.add_widget(back)
+
+        # Action button
+        favorite = AppLauncherContextMenuButton(
+            text='Favorite', icon_name='favorite')
+        body_layout.add_widget(favorite)
+
+        shortcut = AppLauncherContextMenuButton(
+            text='Shortcut', icon_name='link')
+        body_layout.add_widget(shortcut)
+
+        hide = AppLauncherContextMenuButton(
+            text='Hide', icon_name='view-hidden')
+        body_layout.add_widget(hide)
 
 
 class GhostAppLauncher(QtWidgets.QWidget):
@@ -442,10 +511,12 @@ class CategoryButton(QtWidgets.QWidget):
     __clicked_signal = QtCore.Signal(object)
 
     def __init__(
-            self, text: str = '...', icon_name: str = None,
+            self, text: str = None, icon_name: str = None,
             *args, **kwargs) -> None:
         """Class constructor."""
         super().__init__(*args, **kwargs)
+        self.set_style_sheet('font-size: 16px;')
+
         self.__text = text
         self.__icon_name = icon_name
         self.__state = False
@@ -500,12 +571,11 @@ class CategoryButton(QtWidgets.QWidget):
             self.__text_layout.add_widget(icon_view)
 
         # Text
-        self.__text = QtWidgets.QLabel(self.__text)
-        self.__text.set_contents_margins(20, 10, 5, 10)
-        self.__text.set_style_sheet("""
-            background: transparent;
-            font-size: 16px;""")
-        self.__text_layout.add_widget(self.__text)
+        self.__text_label = QtWidgets.QLabel(
+            self.__text if self.__text else '')
+        self.__text_label.set_contents_margins(20, 10, 5, 10)
+        self.__text_label.set_style_sheet('background: transparent;')
+        self.__text_layout.add_widget(self.__text_label)
 
         # Accent
         self.__bottom_highlight_line = QtWidgets.QWidget()
@@ -551,7 +621,7 @@ class CategoryButton(QtWidgets.QWidget):
 
     def text(self) -> str:
         """..."""
-        return self.__text.text()
+        return self.__text_label.text()
 
     def set_enter_event_enabled(self, disbled: bool) -> None:
         """..."""
@@ -587,6 +657,104 @@ class CategoryButton(QtWidgets.QWidget):
                 self.__main_container.set_style_sheet("""
                     background: transparent;""")
             event.ignore()
+
+
+class AppLauncherContextMenuButton(QtWidgets.QWidget):
+    """Button widget
+
+    A custom button to use for category pagination.
+    """
+    __clicked_signal = QtCore.Signal(object)
+
+    def __init__(
+            self, text: str = None, icon_name: str = None,
+            *args, **kwargs) -> None:
+        """Class constructor."""
+        super().__init__(*args, **kwargs)
+        self.set_style_sheet(
+            'background-color: rgba(255, 255, 255, 0.05); font-size: 16px;')
+
+        self.__text = text
+        self.__icon_name = icon_name
+
+        self.__main_layout = QtWidgets.QVBoxLayout()
+        self.__main_layout.set_contents_margins(0, 0, 0, 0)
+        self.__main_layout.set_spacing(0)
+        self.set_layout(self.__main_layout)
+
+        # Icon and Text layout
+        self.__text_layout = QtWidgets.QHBoxLayout()
+        self.__text_layout.set_alignment(
+            QtCore.Qt.AlignLeft | QtCore.Qt.AlignCenter)
+        self.__text_layout.set_contents_margins(0, 0, 0, 0)
+        self.__text_layout.set_spacing(0)
+        self.__main_layout.add_layout(self.__text_layout)
+
+        # Icon
+        self.__icon_view = QtWidgets.QLabel()
+        self.__icon_view.set_contents_margins(5, 0, 5, 0)
+        self.__icon_view.set_alignment(
+            QtCore.Qt.AlignLeft | QtCore.Qt.AlignCenter)
+        if self.__icon_name:
+            icon_path = IconTheme.getIconPath(
+                iconname=self.__icon_name,
+                size=22,
+                theme='breeze-dark',
+                extensions=['png', 'svg', 'xpm'])
+            try:
+                pixmap = QtGui.QPixmap(icon_path)
+            except Exception as err:
+                logging.error(err)
+                pixmap = QtGui.QPixmap(os.path.join(
+                    os.path.abspath(os.path.dirname(__file__)),
+                    'static/defaultapp.svg'))
+
+            pixmap = pixmap.scaled(
+                22, 22, QtCore.Qt.KeepAspectRatio)
+            self.__icon_view.set_pixmap(pixmap)
+            self.__text_layout.add_widget(self.__icon_view)
+
+        # Text
+        self.__text_label = QtWidgets.QLabel(self.__text)
+        self.__text_label.set_contents_margins(5, 0, 5, 0)
+        self.__text_label.set_size_policy(
+            QtWidgets.QSizePolicy.Expanding,
+            QtWidgets.QSizePolicy.Expanding)
+        self.__text_layout.add_widget(self.__text_label)
+
+    def clicked_signal(self) -> QtCore.Signal:
+        """..."""
+        return self.__clicked_signal
+
+    def text(self) -> str:
+        """..."""
+        return self.__text_label.text()
+
+    def mouse_press_event(self, event) -> None:
+        """Mouse click event on the widget.
+
+        Emits a signal that the widget has been clicked.
+        """
+        if event.button() == QtCore.Qt.LeftButton:
+            self.__clicked_signal.emit(self)
+
+    def enter_event(self, event) -> None:
+        """Mouse hover event
+
+        Highlight colors when mouse hovers over widget.
+        """
+        self.set_style_sheet(
+            'font-size: 16px; background-color: rgba(255, 255, 255, 0.1);')
+        event.ignore()
+
+    def leave_event(self, event) -> None:
+        """Mouse-over event outside the widget
+
+        Remove highlighting colors when the mouse leaves the widget.
+        """
+        self.set_style_sheet(
+            'font-size: 16px; background-color: rgba(255, 255, 255, 0.05);')
+        event.ignore()
 
 
 class EnergyButton(QtWidgets.QWidget):
