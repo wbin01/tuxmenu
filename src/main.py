@@ -15,6 +15,7 @@ import widgets
 
 class MainWindow(QtWidgets.QMainWindow):
     """App window instance."""
+    __mount_category_buttons_signal = QtCore.Signal(object)
     __mount_recent_apps_signal = QtCore.Signal(object)
     __mount_favorite_apps_signal = QtCore.Signal(object)
     __mount_apps_signal = QtCore.Signal(object)
@@ -91,6 +92,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__recent_apps_thread = threading.Thread(
             target=self.__mount_recent_apps_thread)
         self.__recent_apps_thread.start()
+
+        # Category buttons
+        self.__mount_category_buttons_signal.connect(
+            self.__mount_category_buttons)
+        self.__category_buttons_thread = threading.Thread(
+            target=self.__mount_category_buttons_thread)
+        # self.__category_buttons_thread.start(): Start on favorite apps thread
 
         # Favorite apps page
         self.__favorite_apps = attachments.SavedApps(
@@ -213,6 +221,29 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__home_page_layout.add_widget(app_grid, 6)
 
         # All apps
+        self.__category_buttons_thread.start()
+
+    def __mount_category_buttons_thread(self):
+        # ...
+        time.sleep(0.05)
+        self.__mount_category_buttons_signal.emit(0)
+
+    def __mount_category_buttons(self):
+        self.__menu_schema = attachments.MenuSchema()
+        page_index = 2
+        for categ, apps in self.__menu_schema.schema.items():
+            if not apps:
+                continue
+
+            # Category buttons pagination
+            category_button = widgets.CategoryButton(
+                text=categ, icon_name=self.__menu_schema.icons_schema[categ])
+            setattr(category_button, 'page_index', page_index)
+            category_button.clicked_signal().connect(self.__on_category_button)
+            self.__category_buttons_layout.add_widget(category_button)
+
+            page_index += 1
+
         self.__apps_thread.start()
 
     def __mount_apps_thread(self):
@@ -222,19 +253,17 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __mount_apps(self):
         # Mount app grid
-        self.__menu_schema = attachments.MenuSchema()
-        page_index = 2
         for categ, apps in self.__menu_schema.schema.items():
             if not apps:
                 continue
             apps.sort()
 
-            # Category buttons pagination
-            category_button = widgets.CategoryButton(
-                text=categ, icon_name=self.__menu_schema.icons_schema[categ])
-            setattr(category_button, 'page_index', page_index)
-            category_button.clicked_signal().connect(self.__on_category_button)
-            self.__category_buttons_layout.add_widget(category_button)
+            # # Category buttons pagination
+            # category_button = widgets.CategoryButton(
+            #     text=categ, icon_name=self.__menu_schema.icons_schema[categ])
+            # setattr(category_button, 'page_index', page_index)
+            # category_button.clicked_signal().connect(self.__on_category_button)
+            # self.__category_buttons_layout.add_widget(category_button)
 
             # Apps page
             page = QtWidgets.QWidget()
@@ -269,7 +298,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
             app_grid.set_alignment(QtCore.Qt.AlignTop)
             page_layout.add_widget(app_grid)
-            page_index += 1
 
         # Energy buttons
         lock_screen_button = widgets.EnergyButton('system-lock-screen')
