@@ -17,6 +17,7 @@ from attachments import DesktopFile, MenuSchema
 class AppGrid(QtWidgets.QScrollArea):
     """App launcher grid widget."""
     __clicked_signal = QtCore.Signal(object)
+    __right_clicked_signal = QtCore.Signal(object)
     __enter_event_signal = QtCore.Signal(object)
     __leave_event_signal = QtCore.Signal(object)
     __mount_grid_signal = QtCore.Signal(object)
@@ -36,7 +37,6 @@ class AppGrid(QtWidgets.QScrollArea):
         self.__desktop_file_list = desktop_file_list
         self.__columns_num = columns_num
         self.__empty_lines = empty_lines
-        self.__first_app_launcher = None  # Not use
 
         # Style
         self.set_alignment(QtCore.Qt.AlignTop)
@@ -65,12 +65,13 @@ class AppGrid(QtWidgets.QScrollArea):
         mount_grid_thread = threading.Thread(target=self.__mount_grid_thread)
         mount_grid_thread.start()
 
-    def first_app_launcher(self) -> QtWidgets.QWidget:
-        return self.__first_app_launcher
-
     def clicked_signal(self) -> QtCore.Signal:
         """..."""
         return self.__clicked_signal
+
+    def right_clicked_signal(self) -> QtCore.Signal:
+        """..."""
+        return self.__right_clicked_signal
 
     def enter_event_signal(self) -> QtCore.Signal:
         """..."""
@@ -108,6 +109,8 @@ class AppGrid(QtWidgets.QScrollArea):
                 no_thread=no_thread)
             app_launcher.clicked_signal().connect(
                 self.__on_app_launcher_clicked_signal)
+            app_launcher.right_clicked_signal().connect(
+                self.__on_app_launcher_right_clicked_signal)
             app_launcher.enter_event_signal().connect(
                 self.__on_launcher_enter_event_signal)
             app_launcher.leave_event_signal().connect(
@@ -148,6 +151,10 @@ class AppGrid(QtWidgets.QScrollArea):
         # When the app is clicked, this method is triggered
         self.__clicked_signal.emit(widget)
 
+    def __on_app_launcher_right_clicked_signal(self, widget) -> None:
+        # When the app is clicked, this method is triggered
+        self.__right_clicked_signal.emit(widget)
+
     def __on_launcher_enter_event_signal(self, widget) -> None:
         # ...
         self.enter_event_signal().emit(widget)
@@ -175,6 +182,7 @@ class AppLauncher(QtWidgets.QWidget):
         super().__init__(*args, **kwargs)
         self.__desktop_file = desktop_file
         self.__no_thread = no_thread
+        self.__context_menu_is_visible = False
 
         # Self setting
         self.set_contents_margins(0, 0, 0, 0)
@@ -237,7 +245,22 @@ class AppLauncher(QtWidgets.QWidget):
             mount_app_launcher_thread.start()
 
     def desktop_file(self) -> DesktopFile:
+        """..."""
         return self.__desktop_file
+
+    def context_menu_is_visible(self) -> bool:
+        """..."""
+        return self.__context_menu_is_visible
+
+    def set_context_menu_to_visible(self, visible: bool) -> None:
+        if visible:
+            if not self.__contex_container.is_visible():
+                self.__body_container.set_visible(False)
+                self.__contex_container.set_visible(True)
+        else:
+            if self.__contex_container.is_visible():
+                self.__body_container.set_visible(True)
+                self.__contex_container.set_visible(False)
 
     def clicked_signal(self) -> QtCore.Signal:
         """..."""
@@ -311,6 +334,7 @@ class AppLauncher(QtWidgets.QWidget):
 
         # Context
         context = AppLauncherContextMenu()
+        context.clicked_signal().connect(self.__on_context)
         self.__context_layout.add_widget(context)
 
         # Accent
@@ -347,15 +371,9 @@ class AppLauncher(QtWidgets.QWidget):
         if event.button() == QtCore.Qt.LeftButton:
             self.__clicked_signal.emit(self)
         elif event.button() == QtCore.Qt.RightButton:
-            print(self.__desktop_file, 'Right click')
-
-            if not self.__contex_container.is_visible():
-                self.__body_container.set_visible(False)
-                self.__contex_container.set_visible(True)
-
             self.__right_clicked_signal.emit(self)
 
-    def paint_event(self, event):
+    def paint_event(self, event) -> None:
         img_path = None
         if 'snapd' in self.__desktop_file.url:
             img_path = os.path.join(
@@ -377,6 +395,9 @@ class AppLauncher(QtWidgets.QWidget):
             painter.draw_pixmap(QtCore.QPoint(10, 10), pixmap)
 
         event.ignore()
+
+    def __on_context(self, widget) -> None:
+        self.__clicked_signal.emit(widget)
 
     def __str__(self) -> str:
         return str(self.__desktop_file)
@@ -406,25 +427,46 @@ class AppLauncherContextMenu(QtWidgets.QWidget):
 
         body_layout = QtWidgets.QVBoxLayout()
         body_layout.set_contents_margins(5, 5, 5, 5)
-        body_layout.set_spacing(2)
+        body_layout.set_spacing(1)
         body.set_layout(body_layout)
 
         # Back buttons
-        back = AppLauncherContextMenuButton(text=' ', icon_name='go-previous')
+        back = AppLauncherContextMenuButton(
+            text=' ', icon_name='go-previous', button_id='go-back')
+        back.clicked_signal().connect(self.__on_button)
         body_layout.add_widget(back)
 
         # Action button
         favorite = AppLauncherContextMenuButton(
-            text='Favorite', icon_name='favorite')
+            text='Favorite', icon_name='favorite', button_id='favorite')
+        favorite.clicked_signal().connect(self.__on_button)
         body_layout.add_widget(favorite)
 
         shortcut = AppLauncherContextMenuButton(
-            text='Shortcut', icon_name='link')
+            text='Shortcut', icon_name='link', button_id='shortcut')
+        shortcut.clicked_signal().connect(self.__on_button)
         body_layout.add_widget(shortcut)
 
         hide = AppLauncherContextMenuButton(
-            text='Hide', icon_name='view-hidden')
+            text='Hide', icon_name='view-hidden', button_id='hide')
+        hide.clicked_signal().connect(self.__on_button)
         body_layout.add_widget(hide)
+
+    def clicked_signal(self) -> QtCore.Signal:
+        """..."""
+        return self.__clicked_signal
+
+    def mouse_press_event(self, event) -> None:
+        """Mouse click event on the widget.
+
+        Emits a signal that the widget has been clicked.
+        """
+        # event -> QtGui.QMouseEvent
+        if event.button() == QtCore.Qt.LeftButton:
+            self.__clicked_signal.emit(self)
+
+    def __on_button(self, widget) -> None:
+        self.__clicked_signal.emit(widget)
 
 
 class GhostAppLauncher(QtWidgets.QWidget):
@@ -668,14 +710,15 @@ class AppLauncherContextMenuButton(QtWidgets.QWidget):
 
     def __init__(
             self, text: str = None, icon_name: str = None,
-            *args, **kwargs) -> None:
+            button_id: str = None, *args, **kwargs) -> None:
         """Class constructor."""
         super().__init__(*args, **kwargs)
         self.set_style_sheet(
-            'background-color: rgba(255, 255, 255, 0.05); font-size: 16px;')
+            'background-color: rgba(255, 255, 255, 0.05); font-size: 14px;')
 
         self.__text = text
         self.__icon_name = icon_name
+        self.__button_id = button_id if button_id else str(id(self))
 
         self.__main_layout = QtWidgets.QVBoxLayout()
         self.__main_layout.set_contents_margins(0, 0, 0, 0)
@@ -692,7 +735,7 @@ class AppLauncherContextMenuButton(QtWidgets.QWidget):
 
         # Icon
         self.__icon_view = QtWidgets.QLabel()
-        self.__icon_view.set_contents_margins(5, 0, 5, 0)
+        self.__icon_view.set_contents_margins(5, 0, 0, 0)
         self.__icon_view.set_alignment(
             QtCore.Qt.AlignLeft | QtCore.Qt.AlignCenter)
         if self.__icon_name:
@@ -730,6 +773,10 @@ class AppLauncherContextMenuButton(QtWidgets.QWidget):
         """..."""
         return self.__text_label.text()
 
+    def button_id(self) -> str:
+        """..."""
+        return self.__button_id
+
     def mouse_press_event(self, event) -> None:
         """Mouse click event on the widget.
 
@@ -744,7 +791,7 @@ class AppLauncherContextMenuButton(QtWidgets.QWidget):
         Highlight colors when mouse hovers over widget.
         """
         self.set_style_sheet(
-            'font-size: 16px; background-color: rgba(255, 255, 255, 0.1);')
+            'font-size: 14px; background-color: rgba(255, 255, 255, 0.1);')
         event.ignore()
 
     def leave_event(self, event) -> None:
@@ -753,7 +800,7 @@ class AppLauncherContextMenuButton(QtWidgets.QWidget):
         Remove highlighting colors when the mouse leaves the widget.
         """
         self.set_style_sheet(
-            'font-size: 16px; background-color: rgba(255, 255, 255, 0.05);')
+            'font-size: 14px; background-color: rgba(255, 255, 255, 0.05);')
         event.ignore()
 
 

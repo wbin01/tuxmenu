@@ -26,6 +26,7 @@ class MainWindow(QtWidgets.QMainWindow):
         super().__init__(*args, **kwargs)
         self.__set_style()
         self.__menu_schema = None
+        self.__context_app_launcher = None
 
         # Main container
         self.__main_container = QtWidgets.QWidget()
@@ -173,11 +174,11 @@ class MainWindow(QtWidgets.QMainWindow):
             columns_num=self.__app_grid_columns,
             empty_lines=1)
         app_grid.clicked_signal().connect(
-            lambda widget: self.__on_app_launcher(
-                widget))
+            lambda widget: self.__on_app_launcher(widget))
+        app_grid.right_clicked_signal().connect(
+            lambda widget: self.__on_app_launcher_right_click(widget))
         app_grid.enter_event_signal().connect(
-            lambda widget: self.__on_app_launcher_enter_event(
-                widget))
+            lambda widget: self.__on_app_launcher_enter_event(widget))
         app_grid.leave_event_signal().connect(
             lambda _: self.__on_app_launcher_leave_event())
         app_grid.set_alignment(QtCore.Qt.AlignTop)
@@ -210,11 +211,11 @@ class MainWindow(QtWidgets.QMainWindow):
             columns_num=self.__app_grid_columns,
             empty_lines=2)
         app_grid.clicked_signal().connect(
-            lambda widget: self.__on_app_launcher(
-                widget))
+            lambda widget: self.__on_app_launcher(widget))
+        app_grid.right_clicked_signal().connect(
+            lambda widget: self.__on_app_launcher_right_click(widget))
         app_grid.enter_event_signal().connect(
-            lambda widget: self.__on_app_launcher_enter_event(
-                widget))
+            lambda widget: self.__on_app_launcher_enter_event(widget))
         app_grid.leave_event_signal().connect(
             lambda _: self.__on_app_launcher_leave_event())
         app_grid.set_alignment(QtCore.Qt.AlignTop)
@@ -284,6 +285,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
             app_grid.clicked_signal().connect(
                 lambda widget: self.__on_app_launcher(widget))
+            app_grid.right_clicked_signal().connect(
+                lambda widget: self.__on_app_launcher_right_click(widget))
             app_grid.enter_event_signal().connect(
                 lambda widget: self.__on_app_launcher_enter_event(widget))
             app_grid.leave_event_signal().connect(
@@ -409,11 +412,11 @@ class MainWindow(QtWidgets.QMainWindow):
                     desktop_file_list=desktop_apps,
                     columns_num=self.__app_grid_columns)
                 app_grid.clicked_signal().connect(
-                    lambda widget: self.__on_app_launcher(
-                        widget))
+                    lambda widget: self.__on_app_launcher(widget))
+                app_grid.right_clicked_signal().connect(
+                    lambda widget: self.__on_app_launcher_right_click(widget))
                 app_grid.enter_event_signal().connect(
-                    lambda widget: self.__on_app_launcher_enter_event(
-                        widget))
+                    lambda widget: self.__on_app_launcher_enter_event(widget))
                 app_grid.leave_event_signal().connect(
                     lambda _: self.__on_app_launcher_leave_event())
                 app_grid.set_alignment(QtCore.Qt.AlignTop)
@@ -454,7 +457,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __on_app_launcher(self, widget):
         # When the app is clicked, this method is triggered
-        if str(widget) != '<GhostAppLauncher: Boo>':
+
+        if isinstance(widget, widgets.AppLauncher):
             # Save app in "Recents"
             if widget.desktop_file() in self.__recent_apps.apps:
                 self.__recent_apps.apps.remove(widget.desktop_file())
@@ -467,9 +471,26 @@ class MainWindow(QtWidgets.QMainWindow):
             self.__recent_apps.save_apps(
                 url_list_apps=[x.url for x in self.__recent_apps.apps])
             print(f'Run "AppLauncher: {widget.desktop_file()}" and close')
-        else:
+
+        elif isinstance(widget, widgets.GhostAppLauncher):
             print(f'Run "GhostAppLauncher" and close')
+        elif isinstance(widget, widgets.AppLauncherContextMenuButton):
+            print(self.__context_app_launcher)
+            if widget.button_id() == 'go-back':
+                self.__context_app_launcher.set_context_menu_to_visible(False)
+                return
+
         self.close()
+
+    def __on_app_launcher_right_click(self, widget):
+        # When the app is clicked, this method is triggered
+        print(f'Right click on "AppLauncher: {widget.desktop_file()}"')
+        if not widget.context_menu_is_visible():
+            if self.__context_app_launcher:
+                self.__context_app_launcher.set_context_menu_to_visible(False)
+
+            widget.set_context_menu_to_visible(True)
+            self.__context_app_launcher = widget
 
     def __on_app_launcher_enter_event(self, widget):
         # Add status bar info
