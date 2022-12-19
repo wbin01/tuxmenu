@@ -123,7 +123,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__app_pagination_layout.add_layout(self.__energy_buttons_layout)
 
         # Status bar
-        self.__status_bar = QtWidgets.QLabel(' ')
+        self.__status_bar_temp_text = ' '
+        self.__status_bar = QtWidgets.QLabel(self.__status_bar_temp_text)
         self.__status_bar.set_word_wrap(True)
         self.__status_bar.set_fixed_height(50)
         self.__status_bar.set_contents_margins(250, 10, 250, 5)
@@ -475,8 +476,10 @@ class MainWindow(QtWidgets.QMainWindow):
         elif isinstance(widget, widgets.GhostAppLauncher):
             print(f'Run "GhostAppLauncher" and close')
         elif isinstance(widget, widgets.AppLauncherContextMenuButton):
-            print(self.__context_app_launcher)
             if widget.button_id() == 'go-back':
+                # Reset status bar text
+                self.__status_bar.set_text(self.__status_bar_temp_text)
+                # Close active context menu
                 self.__context_app_launcher.set_context_menu_to_visible(False)
                 return
 
@@ -485,15 +488,39 @@ class MainWindow(QtWidgets.QMainWindow):
     def __on_app_launcher_right_click(self, widget):
         # When the app is clicked, this method is triggered
         print(f'Right click on "AppLauncher: {widget.desktop_file()}"')
+
+        # Save status bar text
+        self.__status_bar_temp_text = self.__status_bar.text()
+
+        # Show context menu
         if not widget.context_menu_is_visible():
-            if self.__context_app_launcher:
+            if self.__context_app_launcher:  # Close other context menus
                 self.__context_app_launcher.set_context_menu_to_visible(False)
 
             widget.set_context_menu_to_visible(True)
+
+            widget.app_launcher_context_menu().enter_event_signal().connect(
+                self.__on_app_launcher_context_menu_enter_event)
+
             self.__context_app_launcher = widget
+
+    def __on_app_launcher_context_menu_enter_event(self, widget):
+        # ...
+        if widget.button_id() == 'go-back':
+            self.__status_bar.set_text(
+                'Closes the context menu and returns to application view')
+        elif widget.button_id() == 'favorite':
+            self.__status_bar.set_text(
+                "Pin application on menu home page, in the 'Favorite' section")
+        elif widget.button_id() == 'shortcut':
+            self.__status_bar.set_text('Create an app shortcut on the desktop')
+        elif widget.button_id() == 'hide':
+            self.__status_bar.set_text('Hide app from menu')
 
     def __on_app_launcher_enter_event(self, widget):
         # Add status bar info
+
+        # Language code
         local, escope = (locale.getdefaultlocale()[0], '[Desktop Entry]')
 
         # Name
@@ -530,6 +557,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__status_bar.set_text(text)
 
     def __on_app_launcher_leave_event(self):
+        # Clear status bar
         self.__status_bar.set_text(' ')
 
     def __on_energy_buttons(self, widget):
