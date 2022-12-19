@@ -378,7 +378,8 @@ class SavedApps(object):
         urls = []
         if json_data[self.config_name]:
             for url in json_data[self.config_name]:
-                urls.append(DesktopFile(url=url))
+                if os.path.isfile(url):
+                    urls.append(DesktopFile(url=url))
 
         return urls
 
