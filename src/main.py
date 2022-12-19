@@ -14,7 +14,7 @@ import widgets
 
 
 class MainWindow(QtWidgets.QMainWindow):
-    """App window instance."""
+    """App window"""
     __mount_category_buttons_signal = QtCore.Signal(object)
     __mount_recent_apps_signal = QtCore.Signal(object)
     __mount_favorite_apps_signal = QtCore.Signal(object)
@@ -22,11 +22,11 @@ class MainWindow(QtWidgets.QMainWindow):
     __mount_energy_buttons_signal = QtCore.Signal(object)
 
     def __init__(self, *args, **kwargs):
-        """Class constructor."""
+        """Class constructor"""
         super().__init__(*args, **kwargs)
         self.__set_style()
         self.__menu_schema = None
-        self.__context_app_launcher = None
+        self.__active_context_app_launcher = None
 
         # Main container
         self.__main_container = QtWidgets.QWidget()
@@ -227,11 +227,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __mount_category_buttons_thread(self):
         # ...
-        time.sleep(0.05)
+        self.__menu_schema = attachments.MenuSchema()
         self.__mount_category_buttons_signal.emit(0)
 
     def __mount_category_buttons(self):
-        self.__menu_schema = attachments.MenuSchema()
+        # ...
         page_index = 2
         for categ, apps in self.__menu_schema.schema.items():
             if not apps or categ == 'All':
@@ -249,12 +249,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__apps_thread.start()
 
     def __mount_apps_thread(self):
-        # Wait for the main window to render to assemble the app grid
+        # Mount app grid
+
         time.sleep(0.05)
         self.__mount_apps_signal.emit(0)
 
     def __mount_apps(self):
-        # Mount app grid
+        # render app grid
+
         for categ, apps in self.__menu_schema.schema.items():
             if not apps or categ == 'All':
                 continue
@@ -480,7 +482,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 # Reset status bar text
                 self.__status_bar.set_text(self.__status_bar_temp_text)
                 # Close active context menu
-                self.__context_app_launcher.set_context_menu_to_visible(False)
+                self.__active_context_app_launcher.set_context_menu_to_visible(
+                    False)
                 return
 
         self.close()
@@ -494,15 +497,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Show context menu
         if not widget.context_menu_is_visible():
-            if self.__context_app_launcher:  # Close other context menus
-                self.__context_app_launcher.set_context_menu_to_visible(False)
+            if self.__active_context_app_launcher:  # Close other context menus
+                self.__active_context_app_launcher.set_context_menu_to_visible(
+                    False)
 
             widget.set_context_menu_to_visible(True)
+            self.__active_context_app_launcher = widget
 
             widget.app_launcher_context_menu().enter_event_signal().connect(
                 self.__on_app_launcher_context_menu_enter_event)
-
-            self.__context_app_launcher = widget
 
     def __on_app_launcher_context_menu_enter_event(self, widget):
         # ...
