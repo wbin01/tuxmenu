@@ -64,6 +64,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__category_buttons_layout.set_alignment(QtCore.Qt.AlignCenter)
         self.__app_pagination_layout.add_layout(self.__category_buttons_layout)
 
+        self.__mount_category_buttons_signal.connect(
+            self.__mount_category_buttons)
+
+        self.__category_buttons_thread = threading.Thread(  # start() on
+            target=self.__mount_category_buttons_thread)    # 'favorite' thread
+
+        # Apps layout
         self.__app_grid_stacked_layout = QtWidgets.QStackedLayout()
         self.__app_grid_stacked_layout.set_contents_margins(0, 0, 0, 0)
         self.__app_grid_stacked_layout.set_spacing(0)
@@ -73,7 +80,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Searched apps page (temp 0 index)
         self.__app_grid_stacked_layout.add_widget(QtWidgets.QWidget())
 
-        # Home page (Recents and Favorite apps)
+        # Home page: Recents and Favorite
         self.__app_grid_columns = 5
 
         self.__home_page_layout = QtWidgets.QVBoxLayout()
@@ -87,33 +94,25 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__app_grid_stacked_layout.add_widget(self.__home_page_container)
         self.__home_page_container.set_layout(self.__home_page_layout)
 
-        # Recent apps page
+        # Home page: Recent
         self.__recent_apps = attachments.SavedApps(config_name='recent-apps')
         self.__mount_recent_apps_signal.connect(self.__mount_recent_apps)
         self.__recent_apps_thread = threading.Thread(
             target=self.__mount_recent_apps_thread)
         self.__recent_apps_thread.start()
 
-        # Category buttons
-        self.__mount_category_buttons_signal.connect(
-            self.__mount_category_buttons)
-        self.__category_buttons_thread = threading.Thread(
-            target=self.__mount_category_buttons_thread)
-        # self.__category_buttons_thread.start(): Start on favorite apps thread
-
-        # Favorite apps page
+        # Home page: Favorite
         self.__favorite_apps = attachments.SavedApps(
             config_name='favorite-apps')
         self.__mount_favorite_apps_signal.connect(self.__mount_favorite_apps)
-        self.__favorite_apps_thread = threading.Thread(
-            target=self.__mount_favorite_apps_thread)
-        # self.__favorite_apps_thread.start(): Start on 'recent apps thread'
+        self.__favorite_apps_thread = threading.Thread(  # start() on 'recent'
+            target=self.__mount_favorite_apps_thread)    # thread
 
-        # Apps pages thread
+        # App pages
+        self.__app_pages_have_been_created = False
         self.__mount_apps_signal.connect(self.__mount_apps)
-        self.__apps_thread = threading.Thread(
+        self.__apps_thread = threading.Thread(  # start() on category button
             target=self.__mount_apps_thread)
-        # self.__apps_thread.start(): Start on 'favorite apps thread'
 
         # Energy buttons layout
         self.__energy_buttons_layout = QtWidgets.QVBoxLayout()
@@ -121,6 +120,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__energy_buttons_layout.set_spacing(10)
         self.__energy_buttons_layout.set_alignment(QtCore.Qt.AlignCenter)
         self.__app_pagination_layout.add_layout(self.__energy_buttons_layout)
+
+        self.__mount_energy_buttons_signal.connect(self.__mount_energy_buttons)
+
+        self.__energy_buttons_thread = threading.Thread(  # start() on
+            target=self.__mount_energy_buttons_thread)    # 'favorite' thread
 
         # Status bar
         self.__status_bar_temp_text = ' '
@@ -246,10 +250,50 @@ class MainWindow(QtWidgets.QMainWindow):
 
             page_index += 1
 
-        self.__apps_thread.start()
+        self.__energy_buttons_thread.start()
+
+    def __mount_energy_buttons_thread(self) -> None:
+        # ...
+
+        time.sleep(0.05)
+        self.__mount_energy_buttons_signal.emit(0)
+
+    def __mount_energy_buttons(self) -> None:
+        # ...
+
+        # Energy buttons
+        lock_screen_button = widgets.EnergyButton('system-lock-screen')
+        lock_screen_button.clicked_signal().connect(
+            lambda widget: self.__on_energy_buttons(widget))
+        self.__energy_buttons_layout.add_widget(lock_screen_button)
+
+        log_out_button = widgets.EnergyButton('system-log-out')
+        log_out_button.clicked_signal().connect(
+            lambda widget: self.__on_energy_buttons(widget))
+        self.__energy_buttons_layout.add_widget(log_out_button)
+
+        system_suspend_button = widgets.EnergyButton('system-suspend')
+        system_suspend_button.clicked_signal().connect(
+            lambda widget: self.__on_energy_buttons(widget))
+        self.__energy_buttons_layout.add_widget(system_suspend_button)
+
+        # switch_user_button = widgets.EnergyButton('system-switch-user')
+        # switch_user_button.clicked_signal().connect(
+        #     lambda widget: self.__on_energy_buttons(widget))
+        # self.energy_buttons_layout.add_widget(switch_user_button)
+
+        reboot_button = widgets.EnergyButton('system-reboot')
+        reboot_button.clicked_signal().connect(
+            lambda widget: self.__on_energy_buttons(widget))
+        self.__energy_buttons_layout.add_widget(reboot_button)
+
+        shutdown_button = widgets.EnergyButton('system-shutdown')
+        shutdown_button.clicked_signal().connect(
+            lambda widget: self.__on_energy_buttons(widget))
+        self.__energy_buttons_layout.add_widget(shutdown_button)
 
     def __mount_apps_thread(self):
-        # Mount app grid
+        # ...
 
         time.sleep(0.05)
         self.__mount_apps_signal.emit(0)
@@ -297,37 +341,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
             app_grid.set_alignment(QtCore.Qt.AlignTop)
             page_layout.add_widget(app_grid)
-
-        # Energy buttons
-        lock_screen_button = widgets.EnergyButton('system-lock-screen')
-        lock_screen_button.clicked_signal().connect(
-            lambda widget: self.__on_energy_buttons(widget))
-        self.__energy_buttons_layout.add_widget(lock_screen_button)
-
-        log_out_button = widgets.EnergyButton('system-log-out')
-        log_out_button.clicked_signal().connect(
-            lambda widget: self.__on_energy_buttons(widget))
-        self.__energy_buttons_layout.add_widget(log_out_button)
-
-        system_suspend_button = widgets.EnergyButton('system-suspend')
-        system_suspend_button.clicked_signal().connect(
-            lambda widget: self.__on_energy_buttons(widget))
-        self.__energy_buttons_layout.add_widget(system_suspend_button)
-
-        # switch_user_button = widgets.EnergyButton('system-switch-user')
-        # switch_user_button.clicked_signal().connect(
-        #     lambda widget: self.__on_energy_buttons(widget))
-        # self.energy_buttons_layout.add_widget(switch_user_button)
-
-        reboot_button = widgets.EnergyButton('system-reboot')
-        reboot_button.clicked_signal().connect(
-            lambda widget: self.__on_energy_buttons(widget))
-        self.__energy_buttons_layout.add_widget(reboot_button)
-
-        shutdown_button = widgets.EnergyButton('system-shutdown')
-        shutdown_button.clicked_signal().connect(
-            lambda widget: self.__on_energy_buttons(widget))
-        self.__energy_buttons_layout.add_widget(shutdown_button)
 
     def __on_search_input(self, text) -> None:
         # ...
@@ -455,6 +468,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sender().set_check_state(state=True)
         self.__active_category_button = self.sender()
 
+        if not self.__app_pages_have_been_created:
+            self.__app_pages_have_been_created = True
+            self.__apps_thread.start()
         self.__app_grid_stacked_layout.set_current_index(
             self.sender().page_index)
 
