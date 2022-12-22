@@ -200,8 +200,16 @@ class AppLauncherContextMenu(QtWidgets.QWidget):
         body_layout.add_widget(back)
 
         # Action button
+        favorite_remove = AppLauncherContextMenuButton(
+            text='Unpin', icon_name='window-unpin', button_id='unpin')
+        favorite_remove.set_visible(False)
+        favorite_remove.clicked_signal().connect(self.__on_button)
+        favorite_remove.enter_event_signal().connect(
+            self.__on_button_enter_event)
+        body_layout.add_widget(favorite_remove)
+
         favorite = AppLauncherContextMenuButton(
-            text='Favorite', icon_name='favorite', button_id='favorite')
+            text='Pin', icon_name='window-pin', button_id='pin')
         favorite.clicked_signal().connect(self.__on_button)
         favorite.enter_event_signal().connect(self.__on_button_enter_event)
         body_layout.add_widget(favorite)
