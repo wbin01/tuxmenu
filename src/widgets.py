@@ -251,6 +251,9 @@ class AppLauncherContextMenu(QtWidgets.QWidget):
             self.__favorite_button.set_visible(True)
             self.__favorite_remove_button.set_visible(False)
 
+    def favorite_button_is_visible(self) -> bool:
+        return self.__favorite_button.is_visible()
+
     def clicked_signal(self) -> QtCore.Signal:
         """..."""
         return self.__clicked_signal
