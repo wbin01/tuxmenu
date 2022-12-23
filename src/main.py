@@ -526,7 +526,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             # Pin's
             elif widget.button_id() == 'pin':
-                # toggle_favorite_button
+                # Toggle favorite button
                 self.__context_app_launcher.toggle_favorite_button()
 
                 # Insert fav app on app list
@@ -536,9 +536,8 @@ class MainWindow(QtWidgets.QMainWindow):
                         0, self.__context_app_launcher.desktop_file())
 
                     # Save configs
-                    self.__favorite_apps.save_apps(
-                        url_list_apps=[x.url
-                                       for x in self.__favorite_apps.apps])
+                    self.__favorite_apps.save_apps(url_list_apps=[
+                        x.url for x in self.__favorite_apps.apps])
 
                 # Hide old favorite apps
                 self.__fav_update_index += 2
@@ -553,7 +552,38 @@ class MainWindow(QtWidgets.QMainWindow):
                 # Close active context menu
                 self.__context_app_launcher.set_context_menu_to_visible(False)
 
-                print('Context menu: Favorite')
+                print('Context menu: Pin')
+                return
+
+            # !Pin's
+            elif widget.button_id() == 'unpin':
+                # Toggle favorite button
+                self.__context_app_launcher.toggle_favorite_button()
+
+                # Remove favorite app on app list
+                if (self.__context_app_launcher.desktop_file()
+                        in self.__favorite_apps.apps):
+                    self.__favorite_apps.apps.remove(
+                        self.__context_app_launcher.desktop_file())
+
+                    # Save configs
+                    self.__favorite_apps.save_apps(url_list_apps=[
+                        x.url for x in self.__favorite_apps.apps])
+
+                # Hide old favorite apps
+                self.__fav_update_index += 2
+                self.__home_page_layout.item_at(
+                    self.__fav_update_index).widget().set_visible(False)
+                self.__home_page_layout.item_at(
+                    self.__fav_update_index + 1).widget().set_visible(False)
+
+                # Render new app list
+                self.__mount_favorite_apps()
+
+                # Close active context menu
+                self.__context_app_launcher.set_context_menu_to_visible(False)
+
+                print('Context menu: Unpin')
                 return
 
             elif widget.button_id() == 'shortcut':
@@ -583,6 +613,14 @@ class MainWindow(QtWidgets.QMainWindow):
 
             # Save widget
             self.__context_app_launcher = widget
+
+            # Toggle favorite button
+            if widget.desktop_file() not in self.__favorite_apps.apps:
+                # If widget is not a favorite app and 'unpin' is showed...
+                if not widget.app_launcher_context_menu(
+                        ).favorite_button_is_visible():
+                    # ... else show the 'pin' button
+                    self.__context_app_launcher.toggle_favorite_button()
 
     def __on_app_launcher_context_menu_enter_event(self, widget):
         # ...
