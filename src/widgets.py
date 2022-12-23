@@ -15,7 +15,7 @@ from attachments import DesktopFile, MenuSchema
 
 
 class AppGrid(QtWidgets.QScrollArea):
-    """App launcher grid widget."""
+    """App launcher grid widget"""
     __clicked_signal = QtCore.Signal(object)
     __right_clicked_signal = QtCore.Signal(object)
     __enter_event_signal = QtCore.Signal(object)
@@ -29,7 +29,7 @@ class AppGrid(QtWidgets.QScrollArea):
             columns_num: int = 5,
             empty_lines: int = 0,
             *args, **kwargs) -> None:
-        """Class constructor.
+        """Class constructor
 
         :param desktop_file_list: [DesktopFile, DesktopFile]
         :param columns_num: Number of grid columns, default is 5
@@ -133,7 +133,7 @@ class AppGrid(QtWidgets.QScrollArea):
 
         self.__main_layout.add_stretch(1)
 
-    def __mount_ghost_grid(self):
+    def __mount_ghost_grid(self) -> None:
         if self.__empty_lines:
             for _ in range(self.__empty_lines):
                 self.__line_layout = QtWidgets.QHBoxLayout()
@@ -167,6 +167,115 @@ class AppGrid(QtWidgets.QScrollArea):
         self.leave_event_signal().emit(widget)
 
 
+class AppLauncherContextMenuButton(QtWidgets.QWidget):
+    """Button widget
+
+    A custom button to use for category pagination.
+    """
+    __clicked_signal = QtCore.Signal(object)
+    __enter_event_signal = QtCore.Signal(object)
+
+    def __init__(
+            self, text: str = None, icon_name: str = None,
+            button_id: str = None, *args, **kwargs) -> None:
+        """Class constructor"""
+        super().__init__(*args, **kwargs)
+        self.set_style_sheet(
+            'background-color: rgba(255, 255, 255, 0.05); font-size: 14px;')
+
+        self.__text = text
+        self.__icon_name = icon_name
+        self.__button_id = button_id if button_id else str(id(self))
+
+        self.__main_layout = QtWidgets.QVBoxLayout()
+        self.__main_layout.set_contents_margins(0, 0, 0, 0)
+        self.__main_layout.set_spacing(0)
+        self.set_layout(self.__main_layout)
+
+        # Icon and Text layout
+        self.__text_layout = QtWidgets.QHBoxLayout()
+        self.__text_layout.set_alignment(
+            QtCore.Qt.AlignLeft | QtCore.Qt.AlignCenter)
+        self.__text_layout.set_contents_margins(0, 0, 0, 0)
+        self.__text_layout.set_spacing(0)
+        self.__main_layout.add_layout(self.__text_layout)
+
+        # Icon
+        self.__icon_view = QtWidgets.QLabel()
+        self.__icon_view.set_contents_margins(5, 0, 0, 0)
+        self.__icon_view.set_alignment(
+            QtCore.Qt.AlignLeft | QtCore.Qt.AlignCenter)
+        if self.__icon_name:
+            icon_path = IconTheme.getIconPath(
+                iconname=self.__icon_name,
+                size=22,
+                theme='breeze-dark',
+                extensions=['png', 'svg', 'xpm'])
+            try:
+                pixmap = QtGui.QPixmap(icon_path)
+            except Exception as err:
+                logging.error(err)
+                pixmap = QtGui.QPixmap(os.path.join(
+                    os.path.abspath(os.path.dirname(__file__)),
+                    'static/defaultapp.svg'))
+
+            pixmap = pixmap.scaled(
+                22, 22, QtCore.Qt.KeepAspectRatio)
+            self.__icon_view.set_pixmap(pixmap)
+            self.__text_layout.add_widget(self.__icon_view)
+
+        # Text
+        self.__text_label = QtWidgets.QLabel(self.__text)
+        self.__text_label.set_contents_margins(5, 0, 5, 0)
+        self.__text_label.set_size_policy(
+            QtWidgets.QSizePolicy.Expanding,
+            QtWidgets.QSizePolicy.Expanding)
+        self.__text_layout.add_widget(self.__text_label)
+
+    def clicked_signal(self) -> QtCore.Signal:
+        """..."""
+        return self.__clicked_signal
+
+    def text(self) -> str:
+        """..."""
+        return self.__text_label.text()
+
+    def button_id(self) -> str:
+        """..."""
+        return self.__button_id
+
+    def enter_event_signal(self) -> QtCore.Signal:
+        """..."""
+        return self.__enter_event_signal
+
+    def mouse_press_event(self, event) -> None:
+        """Mouse click event on the widget
+
+        Emits a signal that the widget has been clicked.
+        """
+        if event.button() == QtCore.Qt.LeftButton:
+            self.__clicked_signal.emit(self)
+
+    def enter_event(self, event) -> None:
+        """Mouse hover event
+
+        Highlight colors when mouse hovers over widget.
+        """
+        self.set_style_sheet(
+            'font-size: 14px; background-color: rgba(255, 255, 255, 0.1);')
+        self.__enter_event_signal.emit(self)
+        event.ignore()
+
+    def leave_event(self, event) -> None:
+        """Mouse-over event outside the widget
+
+        Remove highlighting colors when the mouse leaves the widget.
+        """
+        self.set_style_sheet(
+            'font-size: 14px; background-color: rgba(255, 255, 255, 0.05);')
+        event.ignore()
+
+
 class AppLauncherContextMenu(QtWidgets.QWidget):
     """..."""
     __clicked_signal = QtCore.Signal(object)
@@ -175,8 +284,9 @@ class AppLauncherContextMenu(QtWidgets.QWidget):
     def __init__(
             self,
             desktop_file: DesktopFile,
-            favorite_desktop_file_list: list, *args, **kwargs) -> None:
-        """Class constructor."""
+            favorite_desktop_file_list: list,
+            *args, **kwargs) -> None:
+        """Class constructor"""
         super().__init__(*args, **kwargs)
         self.__desktop_file = desktop_file
         self.__favorite_desktop_file_list = favorite_desktop_file_list
@@ -252,6 +362,7 @@ class AppLauncherContextMenu(QtWidgets.QWidget):
             self.__favorite_remove_button.set_visible(False)
 
     def favorite_button_is_visible(self) -> bool:
+        """..."""
         return self.__favorite_button.is_visible()
 
     def clicked_signal(self) -> QtCore.Signal:
@@ -271,23 +382,17 @@ class AppLauncherContextMenu(QtWidgets.QWidget):
         if event.button() == QtCore.Qt.LeftButton:
             self.__clicked_signal.emit(self)
 
-        # def enter_event(self, event) -> None:
-        #     """Mouse hover event
-        #
-        #     Highlight colors when mouse hovers over widget.
-        #     """
-        #     self.__enter_event_signal.emit(self)
-        #     event.ignore()
-
     def __on_button(self, widget) -> None:
+        # ...
         self.__clicked_signal.emit(widget)
 
     def __on_button_enter_event(self, widget) -> None:
+        # ...
         self.__enter_event_signal.emit(widget)
 
 
 class AppLauncher(QtWidgets.QWidget):
-    """App launcher widget.
+    """App launcher widget
 
     Displays the application to launch.
     """
@@ -298,11 +403,12 @@ class AppLauncher(QtWidgets.QWidget):
     __mount_app_launcher_signal = QtCore.Signal(object)
 
     def __init__(
-            self, desktop_file: DesktopFile,
+            self,
+            desktop_file: DesktopFile,
             favorite_desktop_file_list: list,
             no_thread: bool = False,
             *args, **kwargs) -> None:
-        """Class constructor."""
+        """Class constructor"""
         super().__init__(*args, **kwargs)
         self.__desktop_file = desktop_file
         self.__favorite_desktop_file_list = favorite_desktop_file_list
@@ -384,6 +490,7 @@ class AppLauncher(QtWidgets.QWidget):
         return self.__context_menu_is_visible
 
     def set_context_menu_to_visible(self, visible: bool) -> None:
+        """..."""
         if visible:
             if not self.__contex_container.is_visible():
                 self.__body_container.set_visible(False)
@@ -394,6 +501,7 @@ class AppLauncher(QtWidgets.QWidget):
                 self.__contex_container.set_visible(False)
 
     def toggle_favorite_button(self) -> None:
+        """..."""
         if self.__app_launcher_context_menu:
             self.__app_launcher_context_menu.toggle_favorite_button()
 
@@ -512,6 +620,7 @@ class AppLauncher(QtWidgets.QWidget):
             self.__right_clicked_signal.emit(self)
 
     def paint_event(self, event) -> None:
+        """..."""
         img_path = None
         if 'snapd' in self.__desktop_file.url:
             img_path = os.path.join(
@@ -535,9 +644,11 @@ class AppLauncher(QtWidgets.QWidget):
         event.ignore()
 
     def __on_context(self, widget) -> None:
+        # ...
         self.__clicked_signal.emit(widget)
 
     def __str__(self) -> str:
+        # ...
         return str(self.__desktop_file)
 
 
@@ -549,7 +660,7 @@ class GhostAppLauncher(QtWidgets.QWidget):
     __clicked_signal = QtCore.Signal(object)
 
     def __init__(self, *args, **kwargs) -> None:
-        """Class constructor."""
+        """Class constructor"""
         super().__init__(*args, **kwargs)
         # self.set_attribute(QtCore.Qt.WA_TranslucentBackground)
         self.set_style_sheet('background-color: rgba(100, 100, 100, 0.05);')
@@ -598,25 +709,6 @@ class GhostAppLauncher(QtWidgets.QWidget):
         return '<GhostAppLauncher: Boo>'
 
 
-class ElidedLabel(QtWidgets.QLabel):
-    """A label widget that can display only the necessary text
-
-    Hidden text is converted to an ellipsis.
-    """
-    def paint_event(self, event) -> None:
-        """Event that draws the text
-
-        Calculate the size of the text that can be displayed and convert
-        the rest to an ellipsis.
-        """
-        painter = QtGui.QPainter(self)
-        metrics = QtGui.QFontMetrics(self.font())
-        elided = metrics.elided_text(
-            self.text(), QtCore.Qt.ElideRight, self.width())
-        painter.draw_text(self.rect(), self.alignment(), elided)
-        event.ignore()
-
-
 class CategoryButton(QtWidgets.QWidget):
     """Button widget
 
@@ -627,7 +719,7 @@ class CategoryButton(QtWidgets.QWidget):
     def __init__(
             self, text: str = None, icon_name: str = None,
             *args, **kwargs) -> None:
-        """Class constructor."""
+        """Class constructor"""
         super().__init__(*args, **kwargs)
         self.set_style_sheet('font-size: 16px;')
 
@@ -773,115 +865,6 @@ class CategoryButton(QtWidgets.QWidget):
             event.ignore()
 
 
-class AppLauncherContextMenuButton(QtWidgets.QWidget):
-    """Button widget
-
-    A custom button to use for category pagination.
-    """
-    __clicked_signal = QtCore.Signal(object)
-    __enter_event_signal = QtCore.Signal(object)
-
-    def __init__(
-            self, text: str = None, icon_name: str = None,
-            button_id: str = None, *args, **kwargs) -> None:
-        """Class constructor."""
-        super().__init__(*args, **kwargs)
-        self.set_style_sheet(
-            'background-color: rgba(255, 255, 255, 0.05); font-size: 14px;')
-
-        self.__text = text
-        self.__icon_name = icon_name
-        self.__button_id = button_id if button_id else str(id(self))
-
-        self.__main_layout = QtWidgets.QVBoxLayout()
-        self.__main_layout.set_contents_margins(0, 0, 0, 0)
-        self.__main_layout.set_spacing(0)
-        self.set_layout(self.__main_layout)
-
-        # Icon and Text layout
-        self.__text_layout = QtWidgets.QHBoxLayout()
-        self.__text_layout.set_alignment(
-            QtCore.Qt.AlignLeft | QtCore.Qt.AlignCenter)
-        self.__text_layout.set_contents_margins(0, 0, 0, 0)
-        self.__text_layout.set_spacing(0)
-        self.__main_layout.add_layout(self.__text_layout)
-
-        # Icon
-        self.__icon_view = QtWidgets.QLabel()
-        self.__icon_view.set_contents_margins(5, 0, 0, 0)
-        self.__icon_view.set_alignment(
-            QtCore.Qt.AlignLeft | QtCore.Qt.AlignCenter)
-        if self.__icon_name:
-            icon_path = IconTheme.getIconPath(
-                iconname=self.__icon_name,
-                size=22,
-                theme='breeze-dark',
-                extensions=['png', 'svg', 'xpm'])
-            try:
-                pixmap = QtGui.QPixmap(icon_path)
-            except Exception as err:
-                logging.error(err)
-                pixmap = QtGui.QPixmap(os.path.join(
-                    os.path.abspath(os.path.dirname(__file__)),
-                    'static/defaultapp.svg'))
-
-            pixmap = pixmap.scaled(
-                22, 22, QtCore.Qt.KeepAspectRatio)
-            self.__icon_view.set_pixmap(pixmap)
-            self.__text_layout.add_widget(self.__icon_view)
-
-        # Text
-        self.__text_label = QtWidgets.QLabel(self.__text)
-        self.__text_label.set_contents_margins(5, 0, 5, 0)
-        self.__text_label.set_size_policy(
-            QtWidgets.QSizePolicy.Expanding,
-            QtWidgets.QSizePolicy.Expanding)
-        self.__text_layout.add_widget(self.__text_label)
-
-    def clicked_signal(self) -> QtCore.Signal:
-        """..."""
-        return self.__clicked_signal
-
-    def text(self) -> str:
-        """..."""
-        return self.__text_label.text()
-
-    def button_id(self) -> str:
-        """..."""
-        return self.__button_id
-
-    def enter_event_signal(self) -> QtCore.Signal:
-        """..."""
-        return self.__enter_event_signal
-
-    def mouse_press_event(self, event) -> None:
-        """Mouse click event on the widget.
-
-        Emits a signal that the widget has been clicked.
-        """
-        if event.button() == QtCore.Qt.LeftButton:
-            self.__clicked_signal.emit(self)
-
-    def enter_event(self, event) -> None:
-        """Mouse hover event
-
-        Highlight colors when mouse hovers over widget.
-        """
-        self.set_style_sheet(
-            'font-size: 14px; background-color: rgba(255, 255, 255, 0.1);')
-        self.__enter_event_signal.emit(self)
-        event.ignore()
-
-    def leave_event(self, event) -> None:
-        """Mouse-over event outside the widget
-
-        Remove highlighting colors when the mouse leaves the widget.
-        """
-        self.set_style_sheet(
-            'font-size: 14px; background-color: rgba(255, 255, 255, 0.05);')
-        event.ignore()
-
-
 class EnergyButton(QtWidgets.QWidget):
     """Button widget
 
@@ -893,7 +876,7 @@ class EnergyButton(QtWidgets.QWidget):
             self,
             icon_name: str, name_id: str = None,
             *args, **kwargs) -> None:
-        """Class constructor."""
+        """Class constructor"""
         super().__init__(*args, **kwargs)
         self.__icon_name = icon_name
         self.__name_id = name_id if name_id else self.__icon_name
@@ -990,10 +973,30 @@ class SearchApps(QtWidgets.QLineEdit):
         self.textChanged.connect(lambda text: self.__text_changed.emit(text))
 
     def text_changed_signal(self) -> QtCore.Signal:
+        """..."""
         return self.__text_changed
 
-    def mouse_press_event(self, event):
+    def mouse_press_event(self, event) -> None:
         """..."""
         if (event.button() == QtCore.Qt.LeftButton
                 or event.button() == QtCore.Qt.RightButton):
             print(self)
+
+
+class ElidedLabel(QtWidgets.QLabel):
+    """A label widget that can display only the necessary text
+
+    Hidden text is converted to an ellipsis.
+    """
+    def paint_event(self, event) -> None:
+        """Event that draws the text
+
+        Calculate the size of the text that can be displayed and convert
+        the rest to an ellipsis.
+        """
+        painter = QtGui.QPainter(self)
+        metrics = QtGui.QFontMetrics(self.font())
+        elided = metrics.elided_text(
+            self.text(), QtCore.Qt.ElideRight, self.width())
+        painter.draw_text(self.rect(), self.alignment(), elided)
+        event.ignore()

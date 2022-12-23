@@ -14,15 +14,15 @@ import widgets
 
 
 class MainWindow(QtWidgets.QMainWindow):
-    """App window instance."""
+    """App window instance"""
     __mount_category_buttons_signal = QtCore.Signal(object)
     __mount_recent_apps_signal = QtCore.Signal(object)
     __mount_favorite_apps_signal = QtCore.Signal(object)
     __mount_apps_signal = QtCore.Signal(object)
     __mount_energy_buttons_signal = QtCore.Signal(object)
 
-    def __init__(self, *args, **kwargs):
-        """Class constructor."""
+    def __init__(self, *args, **kwargs) -> None:
+        """Class constructor"""
         super().__init__(*args, **kwargs)
         self.__set_style()
         self.__menu_schema = None
@@ -140,7 +140,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.set_focus()
         self.install_event_filter(self)
 
-    def __set_style(self):
+    def __set_style(self) -> None:
         # Adds CSS styling to the main window
         style_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), 'static/style.qss')
@@ -148,13 +148,13 @@ class MainWindow(QtWidgets.QMainWindow):
             _style = f.read()
             self.set_style_sheet(_style)
 
-    def __mount_recent_apps_thread(self):
-        # ...
+    def __mount_recent_apps_thread(self) -> None:
+        # Wait for window to render and mount recent app launchers
         time.sleep(0.05)
         self.__mount_recent_apps_signal.emit(0)
 
-    def __mount_recent_apps(self):
-        # ...
+    def __mount_recent_apps(self) -> None:
+        # Mount recent app launchers
 
         # Category buttons pagination
         pagination_button = widgets.CategoryButton(
@@ -197,13 +197,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__app_grid_stacked_layout.set_current_index(1)
         self.__favorite_apps_thread.start()
 
-    def __mount_favorite_apps_thread(self):
-        # ...
+    def __mount_favorite_apps_thread(self) -> None:
+        # Wait for recent apps to render and mount favorite app launchers
         time.sleep(0.05)
         self.__mount_favorite_apps_signal.emit(0)
 
-    def __mount_favorite_apps(self):
-        # ...
+    def __mount_favorite_apps(self) -> None:
+        # Mount favorite app launchers
 
         # Title
         title = QtWidgets.QLabel("Pin's")
@@ -236,12 +236,13 @@ class MainWindow(QtWidgets.QMainWindow):
         except Exception as err:
             print(type(err))
 
-    def __mount_category_buttons_thread(self):
-        # ...
+    def __mount_category_buttons_thread(self) -> None:
+        # Wait for favorite apps to render and mount category buttons
         time.sleep(0.05)
         self.__mount_category_buttons_signal.emit(0)
 
-    def __mount_category_buttons(self):
+    def __mount_category_buttons(self) -> None:
+        # Mount category buttons
         self.__menu_schema = attachments.MenuSchema()
         page_index = 2
         for categ, apps in self.__menu_schema.schema.items():
@@ -261,13 +262,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__energy_buttons_thread.start()
 
     def __mount_energy_buttons_thread(self) -> None:
-        # ...
-
+        # Wait for category buttons to render and mount energy buttons
         time.sleep(0.05)
         self.__mount_energy_buttons_signal.emit(0)
 
     def __mount_energy_buttons(self) -> None:
-        # ...
+        # Mount energy buttons
 
         # Energy buttons
         lock_screen_button = widgets.EnergyButton('system-lock-screen')
@@ -301,13 +301,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__energy_buttons_layout.add_widget(shutdown_button)
 
     def __mount_apps_thread(self) -> None:
-        # ...
+        # Wait for render and mount app launchers
         time.sleep(0.05)
         self.__mount_apps_signal.emit(0)
 
     def __mount_apps(self) -> None:
-        # Mount app grid
-
+        # Mount app launchers
         for categ, apps in self.__menu_schema.schema.items():
             if not apps or categ == 'All':
                 continue
@@ -351,8 +350,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.__active_category_button.clicked_signal().emit(0)
 
-    def __on_search_input(self, text) -> None:
-        # ...
+    def __on_search_input(self, text: str) -> None:
+        # Triggered when text is entered into the search box
+
+        # Show app launchers fn
         def show_searched_apps_page(show: bool) -> None:
             # Back to home category (Recents and Favorite)
             first_button = self.__category_buttons_layout.item_at(0).widget()
@@ -471,7 +472,9 @@ class MainWindow(QtWidgets.QMainWindow):
         else:  # Restore default menu layout
             show_searched_apps_page(False)
 
-    def __on_category_button(self):
+    def __on_category_button(self) -> None:
+        # When mouse cursor hovers over category button
+
         # Close context menus
         if self.__context_app_launcher:
             self.__context_app_launcher.set_context_menu_to_visible(False)
@@ -491,7 +494,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__app_grid_stacked_layout.set_current_index(
             self.sender().page_index)
 
-    def __on_app_launcher(self, widget):
+    def __on_app_launcher(self, widget: QtWidgets) -> None:
         # When the app is clicked, this method is triggered
 
         # AppLauncher
@@ -594,7 +597,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.close()
 
-    def __on_app_launcher_right_click(self, widget):
+    def __on_app_launcher_right_click(
+            self, widget: widgets.AppLauncher) -> None:
         # When the app is clicked, this method is triggered
         print(f'Right click on "AppLauncher: {widget.desktop_file()}"')
 
@@ -622,21 +626,33 @@ class MainWindow(QtWidgets.QMainWindow):
                     # ... else show the 'pin' button
                     self.__context_app_launcher.toggle_favorite_button()
 
-    def __on_app_launcher_context_menu_enter_event(self, widget):
-        # ...
+    def __on_app_launcher_context_menu_enter_event(
+            self, widget: widgets.AppLauncherContextMenuButton) -> None:
+        # Add status bar context menu info
+
+        # Show in the status bar more information about the context menu ...
+        # ...button that the mouse hovers over
         if widget.button_id() == 'go-back':
             self.__status_bar.set_text(
                 'Closes the context menu and returns to application view')
-        elif widget.button_id() == 'favorite':
+        elif widget.button_id() == 'pin':
             self.__status_bar.set_text(
                 "Pin application on menu home page, in the 'Favorite' section")
+        elif widget.button_id() == 'unpin':
+            self.__status_bar.set_text(
+                "Unpin the application from the menu home page under the "
+                "'Favorites' section")
         elif widget.button_id() == 'shortcut':
             self.__status_bar.set_text('Create an app shortcut on the desktop')
         elif widget.button_id() == 'hide':
             self.__status_bar.set_text('Hide app from menu')
 
-    def __on_app_launcher_enter_event(self, widget):
-        # Add status bar info
+    def __on_app_launcher_enter_event(
+            self, widget: widgets.AppLauncher) -> None:
+        # Add status bar app launcher info
+
+        # Show more information about the app in the status bar when the ...
+        # ...mouse hovers over the app launcher
 
         # Language code
         local, escope = (locale.getdefaultlocale()[0], '[Desktop Entry]')
@@ -674,12 +690,12 @@ class MainWindow(QtWidgets.QMainWindow):
         text = f'{name.strip(":").strip(".")}{generic_name}{coment}'
         self.__status_bar.set_text(text)
 
-    def __on_app_launcher_leave_event(self):
+    def __on_app_launcher_leave_event(self) -> None:
         # Clear status bar
         self.__status_bar.set_text(' ')
 
-    def __on_energy_buttons(self, widget):
-        # ...
+    def __on_energy_buttons(self, widget: widgets.EnergyButton) -> None:
+        # When one energy button is clicked
         if widget.name_id() == 'system-lock-screen':
             print('Run "system-lock-screen" and close')
         elif widget.name_id() == 'system-log-out':
@@ -694,8 +710,11 @@ class MainWindow(QtWidgets.QMainWindow):
             print('Run "system-shutdown" and close')
         self.close()
 
-    def event_filter(self, widget, event):
-        """..."""
+    def event_filter(self, widget: QtWidgets, event: QtCore.QEvent) -> None:
+        """Traces the keys.
+
+        Used to manipulate keys and shortcuts.
+        """
         if event.type() == QtCore.QEvent.KeyPress and widget is self:
             key = event.key()
             text = event.text()
@@ -720,24 +739,35 @@ class MainWindow(QtWidgets.QMainWindow):
 
         return QtWidgets.QWidget.event_filter(self, widget, event)
 
-    def mouse_press_event(self, event):
-        """..."""
+    def mouse_press_event(self, event: QtCore.QEvent) -> None:
+        """Mouse click event on the widget
+
+        Emits a signal that the widget has been clicked.
+        """
         if event.button() == QtCore.Qt.LeftButton:
             print('MainWindow close')
             self.close()
 
 
 class Application(object):
-    """Desktop menu for Linux written in Python and Qt."""
-    def __init__(self, args):
-        """Class constructor."""
+    """Desktop menu for Linux written in Python and Qt"""
+    def __init__(self, args: list) -> None:
+        """Class constructor
+
+        Initialize class attributes.
+
+        :param args: List of command line arguments
+        """
         self.__application = QtWidgets.QApplication(args)
         self.__application_icon = 'tuxmenu.png'
         self.__application_name = 'TuxMenu'
         self.__application_window = MainWindow()
 
     def main(self) -> None:
-        """Start the app."""
+        """Start the app
+
+        Sets basic window details and starts the application.
+        """
         # Name
         self.__application_window.set_window_title(self.__application_name)
 
