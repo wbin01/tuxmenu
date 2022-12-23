@@ -178,6 +178,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # App grid
         app_grid = widgets.AppGrid(
             desktop_file_list=self.__recent_apps.apps,
+            favorite_desktop_file_list=self.__favorite_apps.apps,
             columns_num=self.__app_grid_columns,
             empty_lines=1)
         app_grid.clicked_signal().connect(
@@ -215,6 +216,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # App grid
         app_grid = widgets.AppGrid(
             desktop_file_list=self.__favorite_apps.apps,
+            favorite_desktop_file_list=self.__favorite_apps.apps,
             columns_num=self.__app_grid_columns,
             empty_lines=2)
         app_grid.clicked_signal().connect(
@@ -332,6 +334,7 @@ class MainWindow(QtWidgets.QMainWindow):
             # App grid
             app_grid = widgets.AppGrid(
                 desktop_file_list=apps,
+                favorite_desktop_file_list=self.__favorite_apps.apps,
                 columns_num=self.__app_grid_columns)
 
             app_grid.clicked_signal().connect(
@@ -432,6 +435,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 # Create new apps page
                 app_grid = widgets.AppGrid(
                     desktop_file_list=desktop_apps,
+                    favorite_desktop_file_list=self.__favorite_apps.apps,
                     columns_num=self.__app_grid_columns)
                 app_grid.clicked_signal().connect(
                     lambda widget: self.__on_app_launcher(widget))
@@ -468,6 +472,10 @@ class MainWindow(QtWidgets.QMainWindow):
             show_searched_apps_page(False)
 
     def __on_category_button(self):
+        # Close context menus
+        if self.__context_app_launcher:
+            self.__context_app_launcher.set_context_menu_to_visible(False)
+
         # Active category button state (highlight fixed)
         if self.__active_category_button:
             self.__active_category_button.set_check_state(state=False)
@@ -518,6 +526,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
             # Pin's
             elif widget.button_id() == 'pin':
+                # toggle_favorite_button
+                self.__context_app_launcher.toggle_favorite_button()
+
                 # Insert fav app on app list
                 if (self.__context_app_launcher.desktop_file()
                         not in self.__favorite_apps.apps):
@@ -529,7 +540,7 @@ class MainWindow(QtWidgets.QMainWindow):
                         url_list_apps=[x.url
                                        for x in self.__favorite_apps.apps])
 
-                # Old app list visibility
+                # Hide old favorite apps
                 self.__fav_update_index += 2
                 self.__home_page_layout.item_at(
                     self.__fav_update_index).widget().set_visible(False)
@@ -541,6 +552,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
                 # Close active context menu
                 self.__context_app_launcher.set_context_menu_to_visible(False)
+
                 print('Context menu: Favorite')
                 return
 
