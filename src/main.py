@@ -22,7 +22,10 @@ class MainWindow(QtWidgets.QMainWindow):
     __mount_energy_buttons_signal = QtCore.Signal(object)
 
     def __init__(self, *args, **kwargs) -> None:
-        """Class constructor"""
+        """Class constructor
+
+        Initialize class attributes.
+        """
         super().__init__(*args, **kwargs)
         self.__set_style()
         self.__menu_schema = None
@@ -494,7 +497,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__app_grid_stacked_layout.set_current_index(
             self.sender().page_index)
 
-    def __on_app_launcher(self, widget: QtWidgets) -> None:
+    def __on_app_launcher(
+            self,
+            widget:
+            widgets.AppLauncher |
+            widgets.GhostAppLauncher |
+            widgets.AppLauncherContextMenuButton) -> None:
         # When the app is clicked, this method is triggered
 
         # AppLauncher
@@ -710,8 +718,9 @@ class MainWindow(QtWidgets.QMainWindow):
             print('Run "system-shutdown" and close')
         self.close()
 
-    def event_filter(self, widget: QtWidgets, event: QtCore.QEvent) -> None:
-        """Traces the keys.
+    def event_filter(
+            self, widget: QtWidgets.QMainWindow, event: QtCore.QEvent) -> None:
+        """Traces the keys
 
         Used to manipulate keys and shortcuts.
         """

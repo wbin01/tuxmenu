@@ -14,159 +14,6 @@ from __feature__ import snake_case
 from attachments import DesktopFile, MenuSchema
 
 
-class AppGrid(QtWidgets.QScrollArea):
-    """App launcher grid widget"""
-    __clicked_signal = QtCore.Signal(object)
-    __right_clicked_signal = QtCore.Signal(object)
-    __enter_event_signal = QtCore.Signal(object)
-    __leave_event_signal = QtCore.Signal(object)
-    __mount_grid_signal = QtCore.Signal(object)
-
-    def __init__(
-            self,
-            desktop_file_list: list,
-            favorite_desktop_file_list: list,
-            columns_num: int = 5,
-            empty_lines: int = 0,
-            *args, **kwargs) -> None:
-        """Class constructor
-
-        :param desktop_file_list: [DesktopFile, DesktopFile]
-        :param columns_num: Number of grid columns, default is 5
-        """
-        super().__init__(*args, **kwargs)
-        self.__desktop_file_list = desktop_file_list
-        self.__favorite_desktop_file_list = favorite_desktop_file_list
-        self.__columns_num = columns_num
-        self.__empty_lines = empty_lines
-
-        # Style
-        self.set_alignment(QtCore.Qt.AlignTop)
-        self.set_contents_margins(0, 0, 0, 0)
-        self.set_attribute(QtCore.Qt.WA_TranslucentBackground)
-        self.set_style_sheet('background: transparent;')
-
-        self.set_vertical_scroll_bar_policy(QtCore.Qt.ScrollBarAsNeeded)
-        self.set_horizontal_scroll_bar_policy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.set_widget_resizable(True)  # ScrollBarAlwaysOn
-
-        # Main layout
-        self.__main_container = QtWidgets.QWidget()
-        self.__main_container.set_contents_margins(0, 0, 0, 0)
-        self.set_widget(self.__main_container)
-
-        self.__main_layout = QtWidgets.QVBoxLayout()
-        self.__main_layout.set_alignment(QtCore.Qt.AlignTop)
-        self.__main_layout.set_contents_margins(0, 0, 0, 0)
-        self.__main_layout.set_spacing(0)
-        self.__main_container.set_layout(self.__main_layout)
-
-        # Grid creation
-        self.__line_layout = None
-        self.__mount_grid_signal.connect(self.__mount_grid)
-        mount_grid_thread = threading.Thread(target=self.__mount_grid_thread)
-        mount_grid_thread.start()
-
-    def clicked_signal(self) -> QtCore.Signal:
-        """..."""
-        return self.__clicked_signal
-
-    def right_clicked_signal(self) -> QtCore.Signal:
-        """..."""
-        return self.__right_clicked_signal
-
-    def enter_event_signal(self) -> QtCore.Signal:
-        """..."""
-        return self.__enter_event_signal
-
-    def leave_event_signal(self) -> QtCore.Signal:
-        """..."""
-        return self.__leave_event_signal
-
-    def __mount_grid_thread(self) -> None:
-        # Wait for the widget to render to assemble the app launcher
-        time.sleep(0.05)
-        self.__mount_grid_signal.emit(0)
-
-    def __mount_grid(self) -> None:
-        # Mount app launcher
-        if not self.__desktop_file_list:
-            self.__mount_ghost_grid()
-            return
-
-        for num, desktop_file in enumerate(self.__desktop_file_list):
-            if num % self.__columns_num == 0:
-                self.__line_layout = QtWidgets.QHBoxLayout()
-                self.__line_layout.set_alignment(QtCore.Qt.AlignTop)
-                self.__line_layout.set_contents_margins(0, 0, 0, 0)
-                self.__line_layout.set_spacing(0)
-                self.__main_layout.add_layout(self.__line_layout)
-
-            no_thread = False
-            if len(self.__desktop_file_list) < 7:
-                no_thread = True
-
-            app_launcher = AppLauncher(
-                favorite_desktop_file_list=self.__favorite_desktop_file_list,
-                desktop_file=desktop_file,
-                no_thread=no_thread)
-            app_launcher.clicked_signal().connect(
-                self.__on_app_launcher_clicked_signal)
-            app_launcher.right_clicked_signal().connect(
-                self.__on_app_launcher_right_clicked_signal)
-            app_launcher.enter_event_signal().connect(
-                self.__on_launcher_enter_event_signal)
-            app_launcher.leave_event_signal().connect(
-                self.__on_launcher_leave_event_signal)
-            self.__line_layout.add_widget(app_launcher)
-
-        # Complete grid line
-        missing_items_num = (
-                self.__columns_num -
-                (len(self.__desktop_file_list) % self.__columns_num))
-        if missing_items_num != self.__columns_num:
-            for item in range(missing_items_num):
-                app_launcher = GhostAppLauncher()
-                app_launcher.clicked_signal().connect(
-                    self.__on_app_launcher_clicked_signal)
-                self.__line_layout.add_widget(app_launcher)
-
-        self.__main_layout.add_stretch(1)
-
-    def __mount_ghost_grid(self) -> None:
-        if self.__empty_lines:
-            for _ in range(self.__empty_lines):
-                self.__line_layout = QtWidgets.QHBoxLayout()
-                self.__line_layout.set_alignment(QtCore.Qt.AlignTop)
-                self.__line_layout.set_contents_margins(0, 0, 0, 0)
-                self.__line_layout.set_spacing(0)
-                self.__main_layout.add_layout(self.__line_layout)
-
-                for item in range(self.__columns_num):
-                    app_launcher = GhostAppLauncher()
-                    app_launcher.clicked_signal().connect(
-                        self.__on_app_launcher_clicked_signal)
-                    self.__line_layout.add_widget(app_launcher)
-
-            self.__main_layout.add_stretch(1)
-
-    def __on_app_launcher_clicked_signal(self, widget) -> None:
-        # When the app is clicked, this method is triggered
-        self.__clicked_signal.emit(widget)
-
-    def __on_app_launcher_right_clicked_signal(self, widget) -> None:
-        # When the app is clicked, this method is triggered
-        self.__right_clicked_signal.emit(widget)
-
-    def __on_launcher_enter_event_signal(self, widget) -> None:
-        # ...
-        self.enter_event_signal().emit(widget)
-
-    def __on_launcher_leave_event_signal(self, widget) -> None:
-        # ...
-        self.leave_event_signal().emit(widget)
-
-
 class AppLauncherContextMenuButton(QtWidgets.QWidget):
     """Button widget
 
@@ -178,7 +25,10 @@ class AppLauncherContextMenuButton(QtWidgets.QWidget):
     def __init__(
             self, text: str = None, icon_name: str = None,
             button_id: str = None, *args, **kwargs) -> None:
-        """Class constructor"""
+        """Class constructor
+
+        Initialize class attributes.
+        """
         super().__init__(*args, **kwargs)
         self.set_style_sheet(
             'background-color: rgba(255, 255, 255, 0.05); font-size: 14px;')
@@ -233,22 +83,34 @@ class AppLauncherContextMenuButton(QtWidgets.QWidget):
         self.__text_layout.add_widget(self.__text_label)
 
     def clicked_signal(self) -> QtCore.Signal:
-        """..."""
+        """Mouse button click signal
+
+        Gets the signal that is emitted when a mouse button is pressed.
+        """
         return self.__clicked_signal
 
     def text(self) -> str:
-        """..."""
+        """Widget text
+
+        Gets the text used in the widget.
+        """
         return self.__text_label.text()
 
     def button_id(self) -> str:
-        """..."""
+        """Button ID
+
+        Gets the identifier of the button that was defined by parameter.
+        """
         return self.__button_id
 
     def enter_event_signal(self) -> QtCore.Signal:
-        """..."""
+        """Mouse hover event
+
+        Gets the signal that is emitted when the mouse hovers over the widget.
+        """
         return self.__enter_event_signal
 
-    def mouse_press_event(self, event) -> None:
+    def mouse_press_event(self, event: QtCore.QEvent) -> None:
         """Mouse click event on the widget
 
         Emits a signal that the widget has been clicked.
@@ -256,7 +118,7 @@ class AppLauncherContextMenuButton(QtWidgets.QWidget):
         if event.button() == QtCore.Qt.LeftButton:
             self.__clicked_signal.emit(self)
 
-    def enter_event(self, event) -> None:
+    def enter_event(self, event: QtCore.QEvent) -> None:
         """Mouse hover event
 
         Highlight colors when mouse hovers over widget.
@@ -266,7 +128,7 @@ class AppLauncherContextMenuButton(QtWidgets.QWidget):
         self.__enter_event_signal.emit(self)
         event.ignore()
 
-    def leave_event(self, event) -> None:
+    def leave_event(self, event: QtCore.QEvent) -> None:
         """Mouse-over event outside the widget
 
         Remove highlighting colors when the mouse leaves the widget.
@@ -277,7 +139,7 @@ class AppLauncherContextMenuButton(QtWidgets.QWidget):
 
 
 class AppLauncherContextMenu(QtWidgets.QWidget):
-    """..."""
+    """Application launcher context menu widget"""
     __clicked_signal = QtCore.Signal(object)
     __enter_event_signal = QtCore.Signal(object)
 
@@ -286,7 +148,10 @@ class AppLauncherContextMenu(QtWidgets.QWidget):
             desktop_file: DesktopFile,
             favorite_desktop_file_list: list,
             *args, **kwargs) -> None:
-        """Class constructor"""
+        """Class constructor
+
+        Initialize class attributes.
+        """
         super().__init__(*args, **kwargs)
         self.__desktop_file = desktop_file
         self.__favorite_desktop_file_list = favorite_desktop_file_list
@@ -353,7 +218,10 @@ class AppLauncherContextMenu(QtWidgets.QWidget):
         body_layout.add_widget(hide)
 
     def toggle_favorite_button(self) -> None:
-        """..."""
+        """Toggle pin button.
+
+        Will go from 'pin' to 'unpin'.
+        """
         if self.__favorite_button.is_visible():
             self.__favorite_button.set_visible(False)
             self.__favorite_remove_button.set_visible(True)
@@ -362,18 +230,27 @@ class AppLauncherContextMenu(QtWidgets.QWidget):
             self.__favorite_remove_button.set_visible(False)
 
     def favorite_button_is_visible(self) -> bool:
-        """..."""
+        """Whether the favorite button is visible
+
+        Gets a boolean value indicating whether the favorite button is visible.
+        """
         return self.__favorite_button.is_visible()
 
     def clicked_signal(self) -> QtCore.Signal:
-        """..."""
+        """Mouse clicked signal
+
+        Gets the signal that indicates that the mouse clicked on the widget.
+        """
         return self.__clicked_signal
 
     def enter_event_signal(self) -> QtCore.Signal:
-        """..."""
+        """Mouse hover event
+
+        Gets the signal that is emitted when the mouse hovers over the widget.
+        """
         return self.__enter_event_signal
 
-    def mouse_press_event(self, event) -> None:
+    def mouse_press_event(self, event: QtCore.QEvent) -> None:
         """Mouse click event on the widget.
 
         Emits a signal that the widget has been clicked.
@@ -382,12 +259,13 @@ class AppLauncherContextMenu(QtWidgets.QWidget):
         if event.button() == QtCore.Qt.LeftButton:
             self.__clicked_signal.emit(self)
 
-    def __on_button(self, widget) -> None:
-        # ...
+    def __on_button(self, widget: AppLauncherContextMenuButton) -> None:
+        # When app launcher context menu is clicked
         self.__clicked_signal.emit(widget)
 
-    def __on_button_enter_event(self, widget) -> None:
-        # ...
+    def __on_button_enter_event(
+            self, widget: AppLauncherContextMenuButton) -> None:
+        # When mouse hovers over app launcher context menu
         self.__enter_event_signal.emit(widget)
 
 
@@ -408,7 +286,10 @@ class AppLauncher(QtWidgets.QWidget):
             favorite_desktop_file_list: list,
             no_thread: bool = False,
             *args, **kwargs) -> None:
-        """Class constructor"""
+        """Class constructor
+
+        Initialize class attributes.
+        """
         super().__init__(*args, **kwargs)
         self.__desktop_file = desktop_file
         self.__favorite_desktop_file_list = favorite_desktop_file_list
@@ -478,19 +359,35 @@ class AppLauncher(QtWidgets.QWidget):
             mount_app_launcher_thread.start()
 
     def desktop_file(self) -> DesktopFile:
-        """..."""
+        """Contents of a desktop file
+
+        Gets the contents of a desktop file in the form of an object
+        of type DesktopFile.
+        """
         return self.__desktop_file
 
     def app_launcher_context_menu(self) -> AppLauncherContextMenu:
-        """..."""
+        """Application launcher context menu
+
+        Gets the object which is the application launcher context menu.
+        """
         return self.__app_launcher_context_menu
 
     def context_menu_is_visible(self) -> bool:
-        """..."""
+        """Whether the context menu is visible
+
+        Gets a boolean value indicating whether the context menu is visible.
+        """
         return self.__context_menu_is_visible
 
     def set_context_menu_to_visible(self, visible: bool) -> None:
-        """..."""
+        """Configure context menu visibility.
+
+        Pass a boolean value of True to make the context menu visible, or
+        pass False to make it invisible.
+
+        :param visible: Boolean value
+        """
         if visible:
             if not self.__contex_container.is_visible():
                 self.__body_container.set_visible(False)
@@ -501,24 +398,40 @@ class AppLauncher(QtWidgets.QWidget):
                 self.__contex_container.set_visible(False)
 
     def toggle_favorite_button(self) -> None:
-        """..."""
+        """Toggle pin button.
+
+        Will go from 'pin' to 'unpin'.
+        """
         if self.__app_launcher_context_menu:
             self.__app_launcher_context_menu.toggle_favorite_button()
 
     def clicked_signal(self) -> QtCore.Signal:
-        """..."""
+        """Mouse clicked signal
+
+        Gets the signal that indicates that the mouse clicked on the widget.
+        """
         return self.__clicked_signal
 
     def right_clicked_signal(self) -> QtCore.Signal:
-        """..."""
+        """Mouse right click signal
+
+        Gets the signal that is emitted when the right mouse button is pressed.
+        """
         return self.__right_clicked_signal
 
     def enter_event_signal(self) -> QtCore.Signal:
-        """..."""
+        """Mouse hover event
+
+        Gets the signal that is emitted when the mouse hovers over the widget.
+        """
         return self.__enter_event_signal
 
     def leave_event_signal(self) -> QtCore.Signal:
-        """..."""
+        """Mouse-over event outside the widget
+
+        Gets the signal that is emitted when the mouse leaves the top of
+        the widget.
+        """
         return self.__leave_event_signal
 
     def __mount_app_launcher_thread(self) -> None:
@@ -587,7 +500,7 @@ class AppLauncher(QtWidgets.QWidget):
         self.__bottom_highlight_line.set_style_sheet(self.__style_sheet)
         self.__bottom_highlight_line.set_fixed_height(5)
 
-    def enter_event(self, event) -> None:
+    def enter_event(self, event: QtCore.QEvent) -> None:
         """Mouse hover event
 
         Highlight colors when mouse hovers over widget.
@@ -599,7 +512,7 @@ class AppLauncher(QtWidgets.QWidget):
         self.__enter_event_signal.emit(self)
         event.ignore()
 
-    def leave_event(self, event) -> None:
+    def leave_event(self, event: QtCore.QEvent) -> None:
         """Mouse-over event outside the widget
 
         Remove highlighting colors when the mouse leaves the widget.
@@ -609,7 +522,7 @@ class AppLauncher(QtWidgets.QWidget):
         self.__leave_event_signal.emit(self)
         event.ignore()
 
-    def mouse_press_event(self, event) -> None:
+    def mouse_press_event(self, event: QtCore.QEvent) -> None:
         """Mouse click event on the widget.
 
         Emits a signal that the widget has been clicked.
@@ -619,8 +532,11 @@ class AppLauncher(QtWidgets.QWidget):
         elif event.button() == QtCore.Qt.RightButton:
             self.__right_clicked_signal.emit(self)
 
-    def paint_event(self, event) -> None:
-        """..."""
+    def paint_event(self, event: QtCore.QEvent) -> None:
+        """Drawing event
+
+        Draws a logo of a package installer type.
+        """
         img_path = None
         if 'snapd' in self.__desktop_file.url:
             img_path = os.path.join(
@@ -644,11 +560,11 @@ class AppLauncher(QtWidgets.QWidget):
         event.ignore()
 
     def __on_context(self, widget) -> None:
-        # ...
+        # Emit a clicked signal
         self.__clicked_signal.emit(widget)
 
     def __str__(self) -> str:
-        # ...
+        # String for print() fn
         return str(self.__desktop_file)
 
 
@@ -660,7 +576,10 @@ class GhostAppLauncher(QtWidgets.QWidget):
     __clicked_signal = QtCore.Signal(object)
 
     def __init__(self, *args, **kwargs) -> None:
-        """Class constructor"""
+        """Class constructor
+
+        Initialize class attributes.
+        """
         super().__init__(*args, **kwargs)
         # self.set_attribute(QtCore.Qt.WA_TranslucentBackground)
         self.set_style_sheet('background-color: rgba(100, 100, 100, 0.05);')
@@ -693,10 +612,13 @@ class GhostAppLauncher(QtWidgets.QWidget):
         self.__app_name.set_alignment(QtCore.Qt.AlignHCenter)
 
     def clicked_signal(self) -> QtCore.Signal:
-        """..."""
+        """Mouse clicked signal
+
+        Gets the signal that indicates that the mouse clicked on the widget.
+        """
         return self.__clicked_signal
 
-    def mouse_press_event(self, event) -> None:
+    def mouse_press_event(self, event: QtCore.QEvent) -> None:
         """Mouse click event on the widget.
 
         Emits a signal that the widget has been clicked.
@@ -719,7 +641,10 @@ class CategoryButton(QtWidgets.QWidget):
     def __init__(
             self, text: str = None, icon_name: str = None,
             *args, **kwargs) -> None:
-        """Class constructor"""
+        """Class constructor
+
+        Initialize class attributes.
+        """
         super().__init__(*args, **kwargs)
         self.set_style_sheet('font-size: 16px;')
 
@@ -791,7 +716,10 @@ class CategoryButton(QtWidgets.QWidget):
         self.__body_layout.add_widget(self.__bottom_highlight_line)
 
     def clicked_signal(self) -> QtCore.Signal:
-        """..."""
+        """Mouse clicked signal
+
+        Gets the signal that indicates that the mouse clicked on the widget.
+        """
         return self.__clicked_signal
 
     def check_state(self) -> bool:
@@ -826,14 +754,23 @@ class CategoryButton(QtWidgets.QWidget):
                 background: transparent;""")
 
     def text(self) -> str:
-        """..."""
+        """Widget text
+
+        Gets the text used in the widget.
+        """
         return self.__text_label.text()
 
     def set_enter_event_enabled(self, disbled: bool) -> None:
-        """..."""
+        """Enables the enter event
+
+        Enables or disables the widget's ability to receive or emit enter
+        events.
+
+        :param disbled: True or False values
+        """
         self.__enter_event_enabled = disbled
 
-    def mouse_press_event(self, event) -> None:
+    def mouse_press_event(self, event: QtCore.QEvent) -> None:
         """Mouse click event on the widget.
 
         Emits a signal that the widget has been clicked.
@@ -841,7 +778,7 @@ class CategoryButton(QtWidgets.QWidget):
         if event.button() == QtCore.Qt.LeftButton:
             self.__clicked_signal.emit(self)
 
-    def enter_event(self, event) -> None:
+    def enter_event(self, event: QtCore.QEvent) -> None:
         """Mouse hover event
 
         Highlight colors when mouse hovers over widget.
@@ -853,7 +790,7 @@ class CategoryButton(QtWidgets.QWidget):
             self.__clicked_signal.emit(self)
             event.ignore()
 
-    def leave_event(self, event) -> None:
+    def leave_event(self, event: QtCore.QEvent) -> None:
         """Mouse-over event outside the widget
 
         Remove highlighting colors when the mouse leaves the widget.
@@ -876,7 +813,10 @@ class EnergyButton(QtWidgets.QWidget):
             self,
             icon_name: str, name_id: str = None,
             *args, **kwargs) -> None:
-        """Class constructor"""
+        """Class constructor
+
+        Initialize class attributes.
+        """
         super().__init__(*args, **kwargs)
         self.__icon_name = icon_name
         self.__name_id = name_id if name_id else self.__icon_name
@@ -913,30 +853,45 @@ class EnergyButton(QtWidgets.QWidget):
         self.__main_layout.add_widget(self.__icon_view)
 
     def name_id(self) -> str:
-        """..."""
+        """Name ID
+
+        Gets the identifier of the button that was defined by parameter.
+        """
         return self.__name_id
 
     def icon_name(self) -> str:
-        """..."""
+        """Icon name
+
+        Gets the name of the icon used in the button.
+        """
         return self.__icon_name
 
     def set_enter_event_enabled(self, disbled: bool) -> None:
-        """..."""
+        """Enables the enter event
+
+        Enables or disables the widget's ability to receive or emit enter
+        events.
+
+        :param disbled: True or False values
+        """
         self.__enter_event_enabled = disbled
 
     def clicked_signal(self) -> QtCore.Signal:
-        """..."""
+        """Mouse clicked signal
+
+        Gets the signal that indicates that the mouse clicked on the widget.
+        """
         return self.__clicked_signal
 
-    def mouse_press_event(self, event) -> None:
-        """Mouse click event on the widget.
+    def mouse_press_event(self, event: QtCore.QEvent) -> None:
+        """Mouse click event on the widget
 
         Emits a signal that the widget has been clicked.
         """
         if event.button() == QtCore.Qt.LeftButton:
             self.__clicked_signal.emit(self)
 
-    def enter_event(self, event) -> None:
+    def enter_event(self, event: QtCore.QEvent) -> None:
         """Mouse hover event
 
         Highlight colors when mouse hovers over widget.
@@ -947,7 +902,7 @@ class EnergyButton(QtWidgets.QWidget):
                 background-color: rgba(255, 255, 255, 0.05);""")
         event.ignore()
 
-    def leave_event(self, event) -> None:
+    def leave_event(self, event: QtCore.QEvent) -> None:
         """Mouse-over event outside the widget
 
         Remove highlighting colors when the mouse leaves the widget.
@@ -957,12 +912,186 @@ class EnergyButton(QtWidgets.QWidget):
         event.ignore()
 
 
+class AppGrid(QtWidgets.QScrollArea):
+    """App launcher grid widget"""
+    __clicked_signal = QtCore.Signal(object)
+    __right_clicked_signal = QtCore.Signal(object)
+    __enter_event_signal = QtCore.Signal(object)
+    __leave_event_signal = QtCore.Signal(object)
+    __mount_grid_signal = QtCore.Signal(object)
+
+    def __init__(
+            self,
+            desktop_file_list: list,
+            favorite_desktop_file_list: list,
+            columns_num: int = 5,
+            empty_lines: int = 0,
+            *args, **kwargs) -> None:
+        """Class constructor
+
+        Initialize class attributes.
+
+        :param desktop_file_list: [DesktopFile, DesktopFile]
+        :param columns_num: Number of grid columns, default is 5
+        """
+        super().__init__(*args, **kwargs)
+        self.__desktop_file_list = desktop_file_list
+        self.__favorite_desktop_file_list = favorite_desktop_file_list
+        self.__columns_num = columns_num
+        self.__empty_lines = empty_lines
+
+        # Style
+        self.set_alignment(QtCore.Qt.AlignTop)
+        self.set_contents_margins(0, 0, 0, 0)
+        self.set_attribute(QtCore.Qt.WA_TranslucentBackground)
+        self.set_style_sheet('background: transparent;')
+
+        self.set_vertical_scroll_bar_policy(QtCore.Qt.ScrollBarAsNeeded)
+        self.set_horizontal_scroll_bar_policy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.set_widget_resizable(True)  # ScrollBarAlwaysOn
+
+        # Main layout
+        self.__main_container = QtWidgets.QWidget()
+        self.__main_container.set_contents_margins(0, 0, 0, 0)
+        self.set_widget(self.__main_container)
+
+        self.__main_layout = QtWidgets.QVBoxLayout()
+        self.__main_layout.set_alignment(QtCore.Qt.AlignTop)
+        self.__main_layout.set_contents_margins(0, 0, 0, 0)
+        self.__main_layout.set_spacing(0)
+        self.__main_container.set_layout(self.__main_layout)
+
+        # Grid creation
+        self.__line_layout = None
+        self.__mount_grid_signal.connect(self.__mount_grid)
+        mount_grid_thread = threading.Thread(target=self.__mount_grid_thread)
+        mount_grid_thread.start()
+
+    def clicked_signal(self) -> QtCore.Signal:
+        """Mouse button click signal
+
+        Gets the signal that is emitted when a mouse button is pressed.
+        """
+        return self.__clicked_signal
+
+    def right_clicked_signal(self) -> QtCore.Signal:
+        """Mouse right click signal
+
+        Gets the signal that is emitted when the right mouse button is pressed.
+        """
+        return self.__right_clicked_signal
+
+    def enter_event_signal(self) -> QtCore.Signal:
+        """Mouse hover event
+
+        Gets the signal that is emitted when the mouse hovers over the widget.
+        """
+        return self.__enter_event_signal
+
+    def leave_event_signal(self) -> QtCore.Signal:
+        """Mouse-over event outside the widget
+
+        Gets the signal that is emitted when the mouse leaves the top of
+        the widget.
+        """
+        return self.__leave_event_signal
+
+    def __mount_grid_thread(self) -> None:
+        # Wait for the widget to render to assemble the app launcher
+        time.sleep(0.05)
+        self.__mount_grid_signal.emit(0)
+
+    def __mount_grid(self) -> None:
+        # Mount app launcher
+        if not self.__desktop_file_list:
+            self.__mount_ghost_grid()
+            return
+
+        for num, desktop_file in enumerate(self.__desktop_file_list):
+            if num % self.__columns_num == 0:
+                self.__line_layout = QtWidgets.QHBoxLayout()
+                self.__line_layout.set_alignment(QtCore.Qt.AlignTop)
+                self.__line_layout.set_contents_margins(0, 0, 0, 0)
+                self.__line_layout.set_spacing(0)
+                self.__main_layout.add_layout(self.__line_layout)
+
+            no_thread = False
+            if len(self.__desktop_file_list) < 7:
+                no_thread = True
+
+            app_launcher = AppLauncher(
+                favorite_desktop_file_list=self.__favorite_desktop_file_list,
+                desktop_file=desktop_file,
+                no_thread=no_thread)
+            app_launcher.clicked_signal().connect(
+                self.__on_app_launcher_clicked_signal)
+            app_launcher.right_clicked_signal().connect(
+                self.__on_app_launcher_right_clicked_signal)
+            app_launcher.enter_event_signal().connect(
+                self.__on_launcher_enter_event_signal)
+            app_launcher.leave_event_signal().connect(
+                self.__on_launcher_leave_event_signal)
+            self.__line_layout.add_widget(app_launcher)
+
+        # Complete grid line
+        missing_items_num = (
+                self.__columns_num -
+                (len(self.__desktop_file_list) % self.__columns_num))
+        if missing_items_num != self.__columns_num:
+            for item in range(missing_items_num):
+                app_launcher = GhostAppLauncher()
+                app_launcher.clicked_signal().connect(
+                    self.__on_app_launcher_clicked_signal)
+                self.__line_layout.add_widget(app_launcher)
+
+        self.__main_layout.add_stretch(1)
+
+    def __mount_ghost_grid(self) -> None:
+        # Mount an empty grid without apps
+        if self.__empty_lines:
+            for _ in range(self.__empty_lines):
+                self.__line_layout = QtWidgets.QHBoxLayout()
+                self.__line_layout.set_alignment(QtCore.Qt.AlignTop)
+                self.__line_layout.set_contents_margins(0, 0, 0, 0)
+                self.__line_layout.set_spacing(0)
+                self.__main_layout.add_layout(self.__line_layout)
+
+                for item in range(self.__columns_num):
+                    app_launcher = GhostAppLauncher()
+                    app_launcher.clicked_signal().connect(
+                        self.__on_app_launcher_clicked_signal)
+                    self.__line_layout.add_widget(app_launcher)
+
+            self.__main_layout.add_stretch(1)
+
+    def __on_app_launcher_clicked_signal(
+            self, widget: GhostAppLauncher | AppLauncher) -> None:
+        # When the app is clicked, this method is triggered
+        self.__clicked_signal.emit(widget)
+
+    def __on_app_launcher_right_clicked_signal(
+            self, widget: GhostAppLauncher | AppLauncher) -> None:
+        # When the app is clicked, this method is triggered
+        self.__right_clicked_signal.emit(widget)
+
+    def __on_launcher_enter_event_signal(self, widget: AppLauncher) -> None:
+        # Emits a signal when the mouse hovers over the widget
+        self.enter_event_signal().emit(widget)
+
+    def __on_launcher_leave_event_signal(self, widget: AppLauncher) -> None:
+        # Emits a signal when the mouse moves away from the widget
+        self.leave_event_signal().emit(widget)
+
+
 class SearchApps(QtWidgets.QLineEdit):
-    """..."""
+    """A QLineEdit custom widget"""
     __text_changed = QtCore.Signal(object)
 
-    def __init__(self, *args, **kwargs):
-        """..."""
+    def __init__(self, *args, **kwargs) -> None:
+        """Class constructor
+
+        Initialize class attributes.
+        """
         super().__init__(*args, **kwargs)
         self.set_style_sheet("""
             color: #AAA;
@@ -973,11 +1102,17 @@ class SearchApps(QtWidgets.QLineEdit):
         self.textChanged.connect(lambda text: self.__text_changed.emit(text))
 
     def text_changed_signal(self) -> QtCore.Signal:
-        """..."""
+        """Text changed signal
+
+        Gets the signal when the text changes.
+        """
         return self.__text_changed
 
-    def mouse_press_event(self, event) -> None:
-        """..."""
+    def mouse_press_event(self, event: QtCore.QEvent) -> None:
+        """Mouse click event on the widget
+
+        Tracks and handles when any mouse button is pressed.
+        """
         if (event.button() == QtCore.Qt.LeftButton
                 or event.button() == QtCore.Qt.RightButton):
             print(self)
@@ -988,7 +1123,7 @@ class ElidedLabel(QtWidgets.QLabel):
 
     Hidden text is converted to an ellipsis.
     """
-    def paint_event(self, event) -> None:
+    def paint_event(self, event: QtCore.QEvent) -> None:
         """Event that draws the text
 
         Calculate the size of the text that can be displayed and convert
