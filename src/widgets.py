@@ -137,6 +137,9 @@ class AppLauncherContextMenuButton(QtWidgets.QWidget):
             'font-size: 14px; background-color: rgba(255, 255, 255, 0.05);')
         event.ignore()
 
+    def __str__(self) -> str:
+        return f'<AppLauncherContextMenuButton: {self.__text}>'
+
 
 class AppLauncherContextMenu(QtWidgets.QWidget):
     """Application launcher context menu widget"""
@@ -267,6 +270,11 @@ class AppLauncherContextMenu(QtWidgets.QWidget):
             self, widget: AppLauncherContextMenuButton) -> None:
         # When mouse hovers over app launcher context menu
         self.__enter_event_signal.emit(widget)
+
+    def __str__(self) -> str:
+        # String for print() fn
+        return ('<AppLauncherContextMenu: '
+                f'{self.__desktop_file.content["[Desktop Entry]"]["Name"]}>')
 
 
 class AppLauncher(QtWidgets.QWidget):
@@ -565,7 +573,8 @@ class AppLauncher(QtWidgets.QWidget):
 
     def __str__(self) -> str:
         # String for print() fn
-        return str(self.__desktop_file)
+        return ('<AppLauncher: '
+                f'{self.__desktop_file.content["[Desktop Entry]"]["Name"]}>')
 
 
 class GhostAppLauncher(QtWidgets.QWidget):
@@ -628,6 +637,7 @@ class GhostAppLauncher(QtWidgets.QWidget):
             self.__clicked_signal.emit(self)
 
     def __str__(self) -> str:
+        # String for print() fn
         return '<GhostAppLauncher: Boo>'
 
 
@@ -801,6 +811,10 @@ class CategoryButton(QtWidgets.QWidget):
                     background: transparent;""")
             event.ignore()
 
+    def __str__(self) -> str:
+        # String for print() fn
+        return f'<CategoryButton: {self.__text}>'
+
 
 class EnergyButton(QtWidgets.QWidget):
     """Button widget
@@ -910,6 +924,10 @@ class EnergyButton(QtWidgets.QWidget):
         if self.__enter_event_enabled:
             self.__icon_view.set_style_sheet('background: transparent;')
         event.ignore()
+
+    def __str__(self) -> str:
+        # String for print() fn
+        return f'<EnergyButton: {self.__icon_name}>'
 
 
 class AppGrid(QtWidgets.QScrollArea):
@@ -1082,6 +1100,10 @@ class AppGrid(QtWidgets.QScrollArea):
         # Emits a signal when the mouse moves away from the widget
         self.leave_event_signal().emit(widget)
 
+    def __str__(self) -> str:
+        # String for print() fn
+        return f'<AppGrid: {id(self)}>'
+
 
 class SearchApps(QtWidgets.QLineEdit):
     """A QLineEdit custom widget"""
@@ -1117,6 +1139,10 @@ class SearchApps(QtWidgets.QLineEdit):
                 or event.button() == QtCore.Qt.RightButton):
             print(self)
 
+    def __str__(self) -> str:
+        # String for print() fn
+        return f'<SearchApps: {id(self)}>'
+
 
 class ElidedLabel(QtWidgets.QLabel):
     """A label widget that can display only the necessary text
@@ -1135,3 +1161,7 @@ class ElidedLabel(QtWidgets.QLabel):
             self.text(), QtCore.Qt.ElideRight, self.width())
         painter.draw_text(self.rect(), self.alignment(), elided)
         event.ignore()
+
+    def __str__(self) -> str:
+        # String for print() fn
+        return f'<ElidedLabel: {id(self)}>'
