@@ -354,32 +354,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __on_search_input(self, text: str) -> None:
         # Triggered when text is entered into the search box
-
-        # Show app launchers fn
-        def show_searched_apps_page(show: bool) -> None:
-            # Back to home category (Recents and Pin's)
-            first_button = self.__category_buttons_layout.item_at(0).widget()
-            if not first_button.check_state():
-                first_button.clicked_signal().emit(0)
-
-            # Show 'Searched apps' page
-            self.__app_grid_stacked_layout.set_current_index(0 if show else 1)
-
-            # Block Category buttons and Energy buttons
-            enabled_status = False if show else True
-            for index in range(self.__category_buttons_layout.count()):
-                item = self.__category_buttons_layout.item_at(index)
-                item.widget().set_enabled(enabled_status)
-                item.widget().set_enter_event_enabled(enabled_status)
-
-            for index in range(self.__energy_buttons_layout.count()):
-                item = self.__energy_buttons_layout.item_at(index)
-                item.widget().set_enabled(enabled_status)
-                item.widget().set_enter_event_enabled(enabled_status)
-
         if text:
             if self.__category_buttons_layout.item_at(0).widget().is_enabled():
-                show_searched_apps_page(True)
+                self.__show_searched_apps_page(show=True)
 
             desktop_apps = []
             local = locale.getdefaultlocale()[0]
@@ -472,7 +449,30 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.__app_grid_stacked_layout.set_current_index(0)
 
         else:  # Restore default menu layout
-            show_searched_apps_page(False)
+            self.__show_searched_apps_page(show=False)
+
+    def __show_searched_apps_page(self, show: bool) -> None:
+        # Back to home category (Recents and Pin's)
+        first_button = self.__category_buttons_layout.item_at(
+            0).widget()
+        if not first_button.check_state():
+            first_button.clicked_signal().emit(0)
+
+        # Show 'Searched apps' page
+        self.__app_grid_stacked_layout.set_current_index(
+            0 if show else 1)
+
+        # Block Category buttons and Energy buttons
+        enabled_status = False if show else True
+        for index in range(self.__category_buttons_layout.count()):
+            item = self.__category_buttons_layout.item_at(index)
+            item.widget().set_enabled(enabled_status)
+            item.widget().set_enter_event_enabled(enabled_status)
+
+        for index in range(self.__energy_buttons_layout.count()):
+            item = self.__energy_buttons_layout.item_at(index)
+            item.widget().set_enabled(enabled_status)
+            item.widget().set_enter_event_enabled(enabled_status)
 
     def __on_category_button(self) -> None:
         # When mouse cursor hovers over category button
@@ -722,6 +722,9 @@ class MainWindow(QtWidgets.QMainWindow):
         """Traces the keys
 
         Used to manipulate keys and shortcuts.
+
+        :param widget: QMainWindow that receives the event
+        :param event: QEvent that captures keyboard keys
         """
         if event.type() == QtCore.QEvent.KeyPress and widget is self:
             key = event.key()
@@ -751,6 +754,8 @@ class MainWindow(QtWidgets.QMainWindow):
         """Mouse click event on the widget
 
         Emits a signal that the widget has been clicked.
+
+        :param event: QEvent that captures keyboard keys
         """
         if event.button() == QtCore.Qt.LeftButton:
             print('MainWindow close')

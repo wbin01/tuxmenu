@@ -28,6 +28,10 @@ class AppLauncherContextMenuButton(QtWidgets.QWidget):
         """Class constructor
 
         Initialize class attributes.
+
+        :param text: Text that will be displayed on the button
+        :param icon_name: Name of the icon that will be displayed on the button
+        :param button_id: ID set manually
         """
         super().__init__(*args, **kwargs)
         self.set_style_sheet(
@@ -114,6 +118,8 @@ class AppLauncherContextMenuButton(QtWidgets.QWidget):
         """Mouse click event on the widget
 
         Emits a signal that the widget has been clicked.
+
+        :param event: QEvent received by sent signal
         """
         if event.button() == QtCore.Qt.LeftButton:
             self.__clicked_signal.emit(self)
@@ -122,6 +128,8 @@ class AppLauncherContextMenuButton(QtWidgets.QWidget):
         """Mouse hover event
 
         Highlight colors when mouse hovers over widget.
+
+        :param event: QEvent received by sent signal
         """
         self.set_style_sheet(
             'font-size: 14px; background-color: rgba(255, 255, 255, 0.1);')
@@ -132,6 +140,8 @@ class AppLauncherContextMenuButton(QtWidgets.QWidget):
         """Mouse-over event outside the widget
 
         Remove highlighting colors when the mouse leaves the widget.
+
+        :param event: QEvent received by sent signal
         """
         self.set_style_sheet(
             'font-size: 14px; background-color: rgba(255, 255, 255, 0.05);')
@@ -154,6 +164,9 @@ class AppLauncherContextMenu(QtWidgets.QWidget):
         """Class constructor
 
         Initialize class attributes.
+
+        :param desktop_file: DesktopFile object
+        :param pin_desktop_file_list: list of pinned DesktopFile objects
         """
         super().__init__(*args, **kwargs)
         self.__desktop_file = desktop_file
@@ -257,6 +270,8 @@ class AppLauncherContextMenu(QtWidgets.QWidget):
         """Mouse click event on the widget.
 
         Emits a signal that the widget has been clicked.
+
+        :param event: QEvent received by sent signal
         """
         # event -> QtGui.QMouseEvent
         if event.button() == QtCore.Qt.LeftButton:
@@ -291,16 +306,22 @@ class AppLauncher(QtWidgets.QWidget):
     def __init__(
             self,
             desktop_file: DesktopFile,
-            favorite_desktop_file_list: list,
+            pin_desktop_file_list: list,
             no_thread: bool = False,
             *args, **kwargs) -> None:
         """Class constructor
 
         Initialize class attributes.
+
+        :param desktop_file: DesktopFile object
+        :param pin_desktop_file_list: list of pinned DesktopFile objects
+        :param no_thread:
+            Boolean that indicates if this widget will use
+            thread to build itself
         """
         super().__init__(*args, **kwargs)
         self.__desktop_file = desktop_file
-        self.__favorite_desktop_file_list = favorite_desktop_file_list
+        self.__pin_desktop_file_list = pin_desktop_file_list
         self.__no_thread = no_thread
         self.__context_menu_is_visible = False
 
@@ -499,7 +520,7 @@ class AppLauncher(QtWidgets.QWidget):
         # Context
         self.__app_launcher_context_menu = AppLauncherContextMenu(
             desktop_file=self.__desktop_file,
-            pin_desktop_file_list=self.__favorite_desktop_file_list)
+            pin_desktop_file_list=self.__pin_desktop_file_list)
         self.__app_launcher_context_menu.clicked_signal().connect(
             self.__on_context)
         self.__context_layout.add_widget(self.__app_launcher_context_menu)
@@ -512,6 +533,8 @@ class AppLauncher(QtWidgets.QWidget):
         """Mouse hover event
 
         Highlight colors when mouse hovers over widget.
+
+        :param event: QEvent received by sent signal
         """
 
         self.__body_container.set_style_sheet(self.__style_sheet_hover)
@@ -524,6 +547,8 @@ class AppLauncher(QtWidgets.QWidget):
         """Mouse-over event outside the widget
 
         Remove highlighting colors when the mouse leaves the widget.
+
+        :param event: QEvent received by sent signal
         """
         self.__body_container.set_style_sheet(self.__style_sheet)
         self.__bottom_highlight_line.set_style_sheet(self.__style_sheet)
@@ -534,6 +559,8 @@ class AppLauncher(QtWidgets.QWidget):
         """Mouse click event on the widget.
 
         Emits a signal that the widget has been clicked.
+
+        :param event: QEvent received by sent signal
         """
         if event.button() == QtCore.Qt.LeftButton:
             self.__clicked_signal.emit(self)
@@ -544,6 +571,8 @@ class AppLauncher(QtWidgets.QWidget):
         """Drawing event
 
         Draws a logo of a package installer type.
+
+        :param event: QEvent received by sent signal
         """
         img_path = None
         if 'snapd' in self.__desktop_file.url:
@@ -631,6 +660,8 @@ class GhostAppLauncher(QtWidgets.QWidget):
         """Mouse click event on the widget.
 
         Emits a signal that the widget has been clicked.
+
+        :param event: QEvent received by sent signal
         """
         # event -> QtGui.QMouseEvent
         if event.button() == QtCore.Qt.LeftButton:
@@ -654,6 +685,9 @@ class CategoryButton(QtWidgets.QWidget):
         """Class constructor
 
         Initialize class attributes.
+
+        :param text: Text that will be displayed on the button
+        :param icon_name: Name of the icon that will be displayed on the button
         """
         super().__init__(*args, **kwargs)
         self.set_style_sheet('font-size: 16px;')
@@ -784,6 +818,8 @@ class CategoryButton(QtWidgets.QWidget):
         """Mouse click event on the widget.
 
         Emits a signal that the widget has been clicked.
+
+        :param event: QEvent received by sent signal
         """
         if event.button() == QtCore.Qt.LeftButton:
             self.__clicked_signal.emit(self)
@@ -792,6 +828,8 @@ class CategoryButton(QtWidgets.QWidget):
         """Mouse hover event
 
         Highlight colors when mouse hovers over widget.
+
+        :param event: QEvent received by sent signal
         """
         if self.__enter_event_enabled:
             if not self.__state:
@@ -804,6 +842,8 @@ class CategoryButton(QtWidgets.QWidget):
         """Mouse-over event outside the widget
 
         Remove highlighting colors when the mouse leaves the widget.
+
+        :param event: QEvent received by sent signal
         """
         if self.__enter_event_enabled:
             if not self.__state:
@@ -830,6 +870,9 @@ class EnergyButton(QtWidgets.QWidget):
         """Class constructor
 
         Initialize class attributes.
+
+        :param icon_name: Name of the icon that will be displayed on the button
+        :param name_id: ID set manually
         """
         super().__init__(*args, **kwargs)
         self.__icon_name = icon_name
@@ -901,6 +944,8 @@ class EnergyButton(QtWidgets.QWidget):
         """Mouse click event on the widget
 
         Emits a signal that the widget has been clicked.
+
+        :param event: QEvent received by sent signal
         """
         if event.button() == QtCore.Qt.LeftButton:
             self.__clicked_signal.emit(self)
@@ -909,6 +954,8 @@ class EnergyButton(QtWidgets.QWidget):
         """Mouse hover event
 
         Highlight colors when mouse hovers over widget.
+
+        :param event: QEvent received by sent signal
         """
         if self.__enter_event_enabled:
             self.__icon_view.set_style_sheet("""
@@ -920,6 +967,8 @@ class EnergyButton(QtWidgets.QWidget):
         """Mouse-over event outside the widget
 
         Remove highlighting colors when the mouse leaves the widget.
+
+        :param event: QEvent received by sent signal
         """
         if self.__enter_event_enabled:
             self.__icon_view.set_style_sheet('background: transparent;')
@@ -949,8 +998,10 @@ class AppGrid(QtWidgets.QScrollArea):
 
         Initialize class attributes.
 
-        :param desktop_file_list: [DesktopFile, DesktopFile]
+        :param desktop_file_list: DesktopFile objects list
+        :param pin_desktop_file_list: Pinned DesktopFile objects list
         :param columns_num: Number of grid columns, default is 5
+        :param empty_lines: Number of empty lines, default is 0
         """
         super().__init__(*args, **kwargs)
         self.__desktop_file_list = desktop_file_list
@@ -1038,7 +1089,7 @@ class AppGrid(QtWidgets.QScrollArea):
                 no_thread = True
 
             app_launcher = AppLauncher(
-                favorite_desktop_file_list=self.__favorite_desktop_file_list,
+                pin_desktop_file_list=self.__favorite_desktop_file_list,
                 desktop_file=desktop_file,
                 no_thread=no_thread)
             app_launcher.clicked_signal().connect(
@@ -1134,6 +1185,8 @@ class SearchApps(QtWidgets.QLineEdit):
         """Mouse click event on the widget
 
         Tracks and handles when any mouse button is pressed.
+
+        :param event: QEvent received by sent signal
         """
         if (event.button() == QtCore.Qt.LeftButton
                 or event.button() == QtCore.Qt.RightButton):
@@ -1154,6 +1207,8 @@ class ElidedLabel(QtWidgets.QLabel):
 
         Calculate the size of the text that can be displayed and convert
         the rest to an ellipsis.
+
+        :param event: QEvent received by sent signal
         """
         painter = QtGui.QPainter(self)
         metrics = QtGui.QFontMetrics(self.font())
