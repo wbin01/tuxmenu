@@ -146,7 +146,7 @@ class AppLauncherContextMenu(QtWidgets.QWidget):
     def __init__(
             self,
             desktop_file: DesktopFile,
-            favorite_desktop_file_list: list,
+            pin_desktop_file_list: list,
             *args, **kwargs) -> None:
         """Class constructor
 
@@ -154,7 +154,7 @@ class AppLauncherContextMenu(QtWidgets.QWidget):
         """
         super().__init__(*args, **kwargs)
         self.__desktop_file = desktop_file
-        self.__favorite_desktop_file_list = favorite_desktop_file_list
+        self.__pin_desktop_file_list = pin_desktop_file_list
 
         self.set_style_sheet('background-color: rgba(100, 100, 100, 0.05);')
 
@@ -184,26 +184,26 @@ class AppLauncherContextMenu(QtWidgets.QWidget):
         body_layout.add_widget(back)
 
         # Action button
-        desktop_file_urls = [x.url for x in self.__favorite_desktop_file_list]
+        desktop_file_urls = [x.url for x in self.__pin_desktop_file_list]
 
-        self.__favorite_remove_button = AppLauncherContextMenuButton(
+        self.__pin_remove_button = AppLauncherContextMenuButton(
             text='Unpin', icon_name='window-unpin', button_id='unpin')
-        self.__favorite_remove_button.clicked_signal().connect(
+        self.__pin_remove_button.clicked_signal().connect(
             self.__on_button)
-        self.__favorite_remove_button.enter_event_signal().connect(
+        self.__pin_remove_button.enter_event_signal().connect(
             self.__on_button_enter_event)
-        body_layout.add_widget(self.__favorite_remove_button)
+        body_layout.add_widget(self.__pin_remove_button)
         if self.__desktop_file.url not in desktop_file_urls:
-            self.__favorite_remove_button.set_visible(False)
+            self.__pin_remove_button.set_visible(False)
 
-        self.__favorite_button = AppLauncherContextMenuButton(
+        self.__pin_button = AppLauncherContextMenuButton(
             text='Pin', icon_name='window-pin', button_id='pin')
-        self.__favorite_button.clicked_signal().connect(self.__on_button)
-        self.__favorite_button.enter_event_signal().connect(
+        self.__pin_button.clicked_signal().connect(self.__on_button)
+        self.__pin_button.enter_event_signal().connect(
             self.__on_button_enter_event)
-        body_layout.add_widget(self.__favorite_button)
+        body_layout.add_widget(self.__pin_button)
         if self.__desktop_file.url in desktop_file_urls:
-            self.__favorite_button.set_visible(False)
+            self.__pin_button.set_visible(False)
 
         shortcut = AppLauncherContextMenuButton(
             text='Shortcut', icon_name='link', button_id='shortcut')
@@ -217,24 +217,24 @@ class AppLauncherContextMenu(QtWidgets.QWidget):
         hide.enter_event_signal().connect(self.__on_button_enter_event)
         body_layout.add_widget(hide)
 
-    def toggle_favorite_button(self) -> None:
+    def toggle_pin_button(self) -> None:
         """Toggle pin button.
 
         Will go from 'pin' to 'unpin'.
         """
-        if self.__favorite_button.is_visible():
-            self.__favorite_button.set_visible(False)
-            self.__favorite_remove_button.set_visible(True)
+        if self.__pin_button.is_visible():
+            self.__pin_button.set_visible(False)
+            self.__pin_remove_button.set_visible(True)
         else:
-            self.__favorite_button.set_visible(True)
-            self.__favorite_remove_button.set_visible(False)
+            self.__pin_button.set_visible(True)
+            self.__pin_remove_button.set_visible(False)
 
-    def favorite_button_is_visible(self) -> bool:
+    def pin_button_is_visible(self) -> bool:
         """Whether the favorite button is visible
 
         Gets a boolean value indicating whether the favorite button is visible.
         """
-        return self.__favorite_button.is_visible()
+        return self.__pin_button.is_visible()
 
     def clicked_signal(self) -> QtCore.Signal:
         """Mouse clicked signal
@@ -397,13 +397,13 @@ class AppLauncher(QtWidgets.QWidget):
                 self.__body_container.set_visible(True)
                 self.__contex_container.set_visible(False)
 
-    def toggle_favorite_button(self) -> None:
+    def toggle_pin_button(self) -> None:
         """Toggle pin button.
 
         Will go from 'pin' to 'unpin'.
         """
         if self.__app_launcher_context_menu:
-            self.__app_launcher_context_menu.toggle_favorite_button()
+            self.__app_launcher_context_menu.toggle_pin_button()
 
     def clicked_signal(self) -> QtCore.Signal:
         """Mouse clicked signal
@@ -491,7 +491,7 @@ class AppLauncher(QtWidgets.QWidget):
         # Context
         self.__app_launcher_context_menu = AppLauncherContextMenu(
             desktop_file=self.__desktop_file,
-            favorite_desktop_file_list=self.__favorite_desktop_file_list)
+            pin_desktop_file_list=self.__favorite_desktop_file_list)
         self.__app_launcher_context_menu.clicked_signal().connect(
             self.__on_context)
         self.__context_layout.add_widget(self.__app_launcher_context_menu)
@@ -923,7 +923,7 @@ class AppGrid(QtWidgets.QScrollArea):
     def __init__(
             self,
             desktop_file_list: list,
-            favorite_desktop_file_list: list,
+            pin_desktop_file_list: list,
             columns_num: int = 5,
             empty_lines: int = 0,
             *args, **kwargs) -> None:
@@ -936,7 +936,7 @@ class AppGrid(QtWidgets.QScrollArea):
         """
         super().__init__(*args, **kwargs)
         self.__desktop_file_list = desktop_file_list
-        self.__favorite_desktop_file_list = favorite_desktop_file_list
+        self.__favorite_desktop_file_list = pin_desktop_file_list
         self.__columns_num = columns_num
         self.__empty_lines = empty_lines
 
