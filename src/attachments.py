@@ -116,6 +116,10 @@ class DesktopFileLocations(object):
 
         return desktop_files
 
+    def __str__(self) -> str:
+        # String for print() fn
+        return f'<DesktopFileLocations: {id(self)}>'
+
 
 class DesktopFile(object):
     """Desktop files object.
@@ -197,35 +201,35 @@ class DesktopFile(object):
 
             self.__content[escope_header] = escope_keys_and_values
 
-    def __gt__(self, other) -> bool:
+    def __gt__(self, obj) -> bool:
         if '[Desktop Entry]' in self.content:
-            return self.content['[Desktop Entry]']['Name'].lower() > other
-        return self.url > other
+            return self.content['[Desktop Entry]']['Name'].lower() > obj
+        return self.url > obj
 
-    def __lt__(self, other) -> bool:
+    def __lt__(self, obj) -> bool:
         if '[Desktop Entry]' in self.content:
-            return self.content['[Desktop Entry]']['Name'].lower() < other
-        return self.url < other
+            return self.content['[Desktop Entry]']['Name'].lower() < obj
+        return self.url < obj
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, obj) -> bool:
         if '[Desktop Entry]' in self.content:
-            return self.content['[Desktop Entry]']['Name'].lower() == other
-        return self.url == other
+            return self.content['[Desktop Entry]']['Name'].lower() == obj
+        return self.url == obj
 
-    def __ge__(self, other) -> bool:
+    def __ge__(self, obj) -> bool:
         if '[Desktop Entry]' in self.content:
-            return self.content['[Desktop Entry]']['Name'].lower() >= other
-        return self.url >= other
+            return self.content['[Desktop Entry]']['Name'].lower() >= obj
+        return self.url >= obj
 
-    def __le__(self, other) -> bool:
+    def __le__(self, obj) -> bool:
         if '[Desktop Entry]' in self.content:
-            return self.content['[Desktop Entry]']['Name'].lower() <= other
-        return self.url <= other
+            return self.content['[Desktop Entry]']['Name'].lower() <= obj
+        return self.url <= obj
 
-    def __ne__(self, other) -> bool:
+    def __ne__(self, obj) -> bool:
         if '[Desktop Entry]' in self.content:
-            return self.content['[Desktop Entry]']['Name'].lower() != other
-        return self.url != other
+            return self.content['[Desktop Entry]']['Name'].lower() != obj
+        return self.url != obj
 
     def __str__(self) -> str:
         if '[Desktop Entry]' in self.content:
@@ -263,7 +267,10 @@ class MenuSchema(object):
 
     @property
     def icons_schema(self) -> dict:
-        """..."""
+        """Icon name schema
+
+        Best system icon name for each category
+        """
         return self.__icons_schema
 
     @property
@@ -335,14 +342,23 @@ class MenuSchema(object):
                         else:
                             self.__schema[categ].append(desktop_file)
 
+    def __str__(self) -> str:
+        # String for print() fn
+        return f'<MenuSchema: {id(self)}>'
+
 
 class SavedApps(object):
-    """..."""
+    """Configure saved apps"""
     def __init__(self, config_name: str):
-        """..."""
-        self.config_name = config_name
+        """Class constructor
+
+        Initialize class properties.
+
+        :param config_name: Name that will serve as an ID for the configuration
+        """
+        self.__config_name = config_name
         self.__config_dirname = 'tuxmenu'
-        self.__config_filename = self.config_name + '.json'
+        self.__config_filename = self.__config_name + '.json'
 
         self.__config_dir_path = (
             os.path.join(os.environ['HOME'], '.config', self.__config_dirname))
@@ -355,17 +371,28 @@ class SavedApps(object):
         self.__apps = self.__load_apps()
 
     @property
+    def config_name(self) -> str:
+        """Config name
+
+        Get the configuration ID name.
+        """
+        return self.__config_name
+
+    @property
     def apps(self) -> list:
-        """..."""
+        """Saved apps
+
+        Gets a list of 'DesktopFile' objects from applications that
+        have been saved.
+        """
         return self.__apps
 
     @apps.setter
     def apps(self, app_list: list) -> None:
-        """..."""
         self.__apps = app_list
 
     def __load_apps(self) -> list:
-        """..."""
+        # Read and load config
         if not os.path.isdir(self.__config_dir_path):
             os.makedirs(self.__config_dir_path)
 
@@ -376,14 +403,21 @@ class SavedApps(object):
             json_data = json.load(f)
 
         urls = []
-        if json_data[self.config_name]:
-            for url in json_data[self.config_name]:
+        if json_data[self.__config_name]:
+            for url in json_data[self.__config_name]:
                 if os.path.isfile(url):
                     urls.append(DesktopFile(url=url))
 
         return urls
 
     def save_apps(self, url_list_apps: list) -> None:
-        """..."""
+        """Save the apps
+
+        Save apps from list in settings.
+        """
         with open(self.__config_file_path, 'w') as f:
-            json.dump({self.config_name: url_list_apps}, f)
+            json.dump({self.__config_name: url_list_apps}, f)
+
+    def __str__(self) -> str:
+        # String for print() fn
+        return f'<SavedApps: {self.__config_name}>'

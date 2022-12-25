@@ -14,15 +14,18 @@ import widgets
 
 
 class MainWindow(QtWidgets.QMainWindow):
-    """App window"""
+    """App window instance"""
     __mount_category_buttons_signal = QtCore.Signal(object)
     __mount_recent_apps_signal = QtCore.Signal(object)
-    __mount_favorite_apps_signal = QtCore.Signal(object)
+    __mount_pin_apps_signal = QtCore.Signal(object)
     __mount_apps_signal = QtCore.Signal(object)
     __mount_energy_buttons_signal = QtCore.Signal(object)
 
-    def __init__(self, *args, **kwargs):
-        """Class constructor"""
+    def __init__(self, *args, **kwargs) -> None:
+        """Class constructor
+
+        Initialize class attributes.
+        """
         super().__init__(*args, **kwargs)
         self.__set_style()
         self.__menu_schema = None
@@ -68,7 +71,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.__mount_category_buttons)
 
         self.__category_buttons_thread = threading.Thread(  # start() on
-            target=self.__mount_category_buttons_thread)    # 'favorite' thread
+            target=self.__mount_category_buttons_thread)    # 'pin' thread
 
         # Apps layout
         self.__app_grid_stacked_layout = QtWidgets.QStackedLayout()
@@ -80,7 +83,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Searched apps page (temp 0 index)
         self.__app_grid_stacked_layout.add_widget(QtWidgets.QWidget())
 
-        # Home page: Recents and Favorite
+        # Home page: Recents and Pin's
         self.__app_grid_columns = 5
 
         self.__home_page_layout = QtWidgets.QVBoxLayout()
@@ -101,13 +104,12 @@ class MainWindow(QtWidgets.QMainWindow):
             target=self.__mount_recent_apps_thread)
         self.__recent_apps_thread.start()
 
-        # Home page: Favorite
-        self.__fav_update_index = 0
-        self.__favorite_apps = attachments.SavedApps(
-            config_name='favorite-apps')
-        self.__mount_favorite_apps_signal.connect(self.__mount_favorite_apps)
-        self.__favorite_apps_thread = threading.Thread(  # start() on 'recent'
-            target=self.__mount_favorite_apps_thread)    # thread
+        # Home page: Pin's
+        self.__pin_update_index = 0
+        self.__pin_apps = attachments.SavedApps(config_name='pin-apps')
+        self.__mount_pin_apps_signal.connect(self.__mount_pin_apps)
+        self.__pin_apps_thread = threading.Thread(  # start() on 'recent'
+            target=self.__mount_pin_apps_thread)    # thread
 
         # App pages
         self.__app_pages_created = False
@@ -125,7 +127,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__mount_energy_buttons_signal.connect(self.__mount_energy_buttons)
 
         self.__energy_buttons_thread = threading.Thread(  # start() on
-            target=self.__mount_energy_buttons_thread)    # 'favorite' thread
+            target=self.__mount_energy_buttons_thread)    # 'pin' thread
 
         # Status bar
         self.__status_bar_temp_text = ' '
@@ -140,7 +142,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.set_focus()
         self.install_event_filter(self)
 
-    def __set_style(self):
+    def __set_style(self) -> None:
         # Adds CSS styling to the main window
         style_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), 'static/style.qss')
@@ -148,24 +150,24 @@ class MainWindow(QtWidgets.QMainWindow):
             _style = f.read()
             self.set_style_sheet(_style)
 
-    def __mount_recent_apps_thread(self):
-        # ...
+    def __mount_recent_apps_thread(self) -> None:
+        # Wait for window to render and mount recent app launchers
         time.sleep(0.05)
         self.__mount_recent_apps_signal.emit(0)
 
-    def __mount_recent_apps(self):
-        # ...
+    def __mount_recent_apps(self) -> None:
+        # Mount recent app launchers
 
         # Category buttons pagination
-        pagination_button = widgets.CategoryButton(
-            text='Favorite',
-            icon_name='preferences-desktop-default-applications')
-        setattr(pagination_button, 'page_index', 1)
-        setattr(pagination_button, 'category', 'favorite')
-        pagination_button.set_check_state(state=True)
-        self.__active_category_button = pagination_button
-        pagination_button.clicked_signal().connect(self.__on_category_button)
-        self.__category_buttons_layout.add_widget(pagination_button)
+        category_button = widgets.CategoryButton(
+            text='Home',
+            icon_name='applications-all')
+        setattr(category_button, 'page_index', 1)
+        setattr(category_button, 'category', 'home')
+        category_button.set_check_state(state=True)
+        self.__active_category_button = category_button
+        category_button.clicked_signal().connect(self.__on_category_button)
+        self.__category_buttons_layout.add_widget(category_button)
 
         # Title
         title = QtWidgets.QLabel('Recents')
@@ -178,7 +180,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # App grid
         app_grid = widgets.AppGrid(
             desktop_file_list=self.__recent_apps.apps,
-            favorite_desktop_file_list=self.__favorite_apps.apps,
+            pin_desktop_file_list=self.__pin_apps.apps,
             columns_num=self.__app_grid_columns,
             empty_lines=1)
         app_grid.clicked_signal().connect(
@@ -193,17 +195,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__home_page_layout.add_widget(app_grid, 4)
         # self.home_page_layout.add_stretch(1)
 
-        # Favorite apps
+        # Pin apps
         self.__app_grid_stacked_layout.set_current_index(1)
-        self.__favorite_apps_thread.start()
+        self.__pin_apps_thread.start()
 
-    def __mount_favorite_apps_thread(self):
-        # ...
+    def __mount_pin_apps_thread(self) -> None:
+        # Wait for recent apps to render and mount pin app launchers
         time.sleep(0.05)
-        self.__mount_favorite_apps_signal.emit(0)
+        self.__mount_pin_apps_signal.emit(0)
 
-    def __mount_favorite_apps(self):
-        # ...
+    def __mount_pin_apps(self) -> None:
+        # Mount pin app launchers
 
         # Title
         title = QtWidgets.QLabel("Pin's")
@@ -215,8 +217,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # App grid
         app_grid = widgets.AppGrid(
-            desktop_file_list=self.__favorite_apps.apps,
-            favorite_desktop_file_list=self.__favorite_apps.apps,
+            desktop_file_list=self.__pin_apps.apps,
+            pin_desktop_file_list=self.__pin_apps.apps,
             columns_num=self.__app_grid_columns,
             empty_lines=2)
         app_grid.clicked_signal().connect(
@@ -236,13 +238,15 @@ class MainWindow(QtWidgets.QMainWindow):
         except Exception as err:
             print(type(err))
 
-    def __mount_category_buttons_thread(self):
-        # ...
-        self.__menu_schema = attachments.MenuSchema()
+    def __mount_category_buttons_thread(self) -> None:
+        # Wait for pin apps to render and mount category buttons
+        time.sleep(0.05)
         self.__mount_category_buttons_signal.emit(0)
 
-    def __mount_category_buttons(self):
-        # ...
+    def __mount_category_buttons(self) -> None:
+        # Mount category buttons
+        self.__menu_schema = attachments.MenuSchema()
+
         page_index = 2
         for categ, apps in self.__menu_schema.schema.items():
             if not apps or categ == 'All':
@@ -261,13 +265,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__energy_buttons_thread.start()
 
     def __mount_energy_buttons_thread(self) -> None:
-        # ...
-
+        # Wait for category buttons to render and mount energy buttons
         time.sleep(0.05)
         self.__mount_energy_buttons_signal.emit(0)
 
     def __mount_energy_buttons(self) -> None:
-        # ...
+        # Mount energy buttons
 
         # Energy buttons
         lock_screen_button = widgets.EnergyButton('system-lock-screen')
@@ -301,14 +304,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__energy_buttons_layout.add_widget(shutdown_button)
 
     def __mount_apps_thread(self) -> None:
-        # ...
-
+        # Wait for render and mount app launchers
         time.sleep(0.05)
         self.__mount_apps_signal.emit(0)
 
     def __mount_apps(self) -> None:
-        # Mount app grid
-
+        # Mount app launchers
         for categ, apps in self.__menu_schema.schema.items():
             if not apps or categ == 'All':
                 continue
@@ -335,7 +336,7 @@ class MainWindow(QtWidgets.QMainWindow):
             # App grid
             app_grid = widgets.AppGrid(
                 desktop_file_list=apps,
-                favorite_desktop_file_list=self.__favorite_apps.apps,
+                pin_desktop_file_list=self.__pin_apps.apps,
                 columns_num=self.__app_grid_columns)
 
             app_grid.clicked_signal().connect(
@@ -352,32 +353,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.__active_category_button.clicked_signal().emit(0)
 
-    def __on_search_input(self, text) -> None:
-        # ...
-        def show_searched_apps_page(show: bool) -> None:
-            # Back to home category (Recents and Favorite)
-            first_button = self.__category_buttons_layout.item_at(0).widget()
-            if not first_button.check_state():
-                first_button.clicked_signal().emit(0)
-
-            # Show 'Searched apps' page
-            self.__app_grid_stacked_layout.set_current_index(0 if show else 1)
-
-            # Block Category buttons and Energy buttons
-            enabled_status = False if show else True
-            for index in range(self.__category_buttons_layout.count()):
-                item = self.__category_buttons_layout.item_at(index)
-                item.widget().set_enabled(enabled_status)
-                item.widget().set_enter_event_enabled(enabled_status)
-
-            for index in range(self.__energy_buttons_layout.count()):
-                item = self.__energy_buttons_layout.item_at(index)
-                item.widget().set_enabled(enabled_status)
-                item.widget().set_enter_event_enabled(enabled_status)
-
+    def __on_search_input(self, text: str) -> None:
+        # Triggered when text is entered into the search box
         if text:
             if self.__category_buttons_layout.item_at(0).widget().is_enabled():
-                show_searched_apps_page(True)
+                self.__show_searched_apps_page(show=True)
 
             desktop_apps = []
             local = locale.getdefaultlocale()[0]
@@ -436,7 +416,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 # Create new apps page
                 app_grid = widgets.AppGrid(
                     desktop_file_list=desktop_apps,
-                    favorite_desktop_file_list=self.__favorite_apps.apps,
+                    pin_desktop_file_list=self.__pin_apps.apps,
                     columns_num=self.__app_grid_columns)
                 app_grid.clicked_signal().connect(
                     lambda widget: self.__on_app_launcher(widget))
@@ -470,9 +450,34 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.__app_grid_stacked_layout.set_current_index(0)
 
         else:  # Restore default menu layout
-            show_searched_apps_page(False)
+            self.__show_searched_apps_page(show=False)
 
-    def __on_category_button(self):
+    def __show_searched_apps_page(self, show: bool) -> None:
+        # Back to home category (Recents and Pin's)
+        first_button = self.__category_buttons_layout.item_at(
+            0).widget()
+        if not first_button.check_state():
+            first_button.clicked_signal().emit(0)
+
+        # Show 'Searched apps' page
+        self.__app_grid_stacked_layout.set_current_index(
+            0 if show else 1)
+
+        # Block Category buttons and Energy buttons
+        enabled_status = False if show else True
+        for index in range(self.__category_buttons_layout.count()):
+            item = self.__category_buttons_layout.item_at(index)
+            item.widget().set_enabled(enabled_status)
+            item.widget().set_enter_event_enabled(enabled_status)
+
+        for index in range(self.__energy_buttons_layout.count()):
+            item = self.__energy_buttons_layout.item_at(index)
+            item.widget().set_enabled(enabled_status)
+            item.widget().set_enter_event_enabled(enabled_status)
+
+    def __on_category_button(self) -> None:
+        # When mouse cursor hovers over category button
+
         # Close context menus
         if self.__context_app_launcher:
             self.__context_app_launcher.set_context_menu_to_visible(False)
@@ -492,7 +497,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__app_grid_stacked_layout.set_current_index(
             self.sender().page_index)
 
-    def __on_app_launcher(self, widget):
+    def __on_app_launcher(
+            self,
+            widget:
+            widgets.AppLauncher |
+            widgets.GhostAppLauncher |
+            widgets.AppLauncherContextMenuButton) -> None:
         # When the app is clicked, this method is triggered
 
         # AppLauncher
@@ -528,28 +538,28 @@ class MainWindow(QtWidgets.QMainWindow):
 
             # Pin's
             elif widget.button_id() == 'pin':
-                # Toggle favorite button
-                self.__context_app_launcher.toggle_favorite_button()
+                # Toggle pin button
+                self.__context_app_launcher.toggle_pin_button()
 
                 # Insert fav app on app list
                 if (self.__context_app_launcher.desktop_file()
-                        not in self.__favorite_apps.apps):
-                    self.__favorite_apps.apps.insert(
+                        not in self.__pin_apps.apps):
+                    self.__pin_apps.apps.insert(
                         0, self.__context_app_launcher.desktop_file())
 
                     # Save configs
-                    self.__favorite_apps.save_apps(url_list_apps=[
-                        x.url for x in self.__favorite_apps.apps])
+                    self.__pin_apps.save_apps(url_list_apps=[
+                        x.url for x in self.__pin_apps.apps])
 
-                # Hide old favorite apps
-                self.__fav_update_index += 2
+                # Hide old pin apps
+                self.__pin_update_index += 2
                 self.__home_page_layout.item_at(
-                    self.__fav_update_index).widget().set_visible(False)
+                    self.__pin_update_index).widget().set_visible(False)
                 self.__home_page_layout.item_at(
-                    self.__fav_update_index + 1).widget().set_visible(False)
+                    self.__pin_update_index + 1).widget().set_visible(False)
 
                 # Render new app list
-                self.__mount_favorite_apps()
+                self.__mount_pin_apps()
 
                 # Close active context menu
                 self.__context_app_launcher.set_context_menu_to_visible(False)
@@ -559,28 +569,28 @@ class MainWindow(QtWidgets.QMainWindow):
 
             # !Pin's
             elif widget.button_id() == 'unpin':
-                # Toggle favorite button
-                self.__context_app_launcher.toggle_favorite_button()
+                # Toggle pin button
+                self.__context_app_launcher.toggle_pin_button()
 
-                # Remove favorite app on app list
+                # Remove pin app on app list
                 if (self.__context_app_launcher.desktop_file()
-                        in self.__favorite_apps.apps):
-                    self.__favorite_apps.apps.remove(
+                        in self.__pin_apps.apps):
+                    self.__pin_apps.apps.remove(
                         self.__context_app_launcher.desktop_file())
 
                     # Save configs
-                    self.__favorite_apps.save_apps(url_list_apps=[
-                        x.url for x in self.__favorite_apps.apps])
+                    self.__pin_apps.save_apps(url_list_apps=[
+                        x.url for x in self.__pin_apps.apps])
 
-                # Hide old favorite apps
-                self.__fav_update_index += 2
+                # Hide old pin apps
+                self.__pin_update_index += 2
                 self.__home_page_layout.item_at(
-                    self.__fav_update_index).widget().set_visible(False)
+                    self.__pin_update_index).widget().set_visible(False)
                 self.__home_page_layout.item_at(
-                    self.__fav_update_index + 1).widget().set_visible(False)
+                    self.__pin_update_index + 1).widget().set_visible(False)
 
                 # Render new app list
-                self.__mount_favorite_apps()
+                self.__mount_pin_apps()
 
                 # Close active context menu
                 self.__context_app_launcher.set_context_menu_to_visible(False)
@@ -596,7 +606,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.close()
 
-    def __on_app_launcher_right_click(self, widget):
+    def __on_app_launcher_right_click(
+            self, widget: widgets.AppLauncher) -> None:
         # When the app is clicked, this method is triggered
         print(f'Right click on "AppLauncher: {widget.desktop_file()}"')
 
@@ -618,29 +629,41 @@ class MainWindow(QtWidgets.QMainWindow):
             # Save widget
             self.__context_app_launcher = widget
 
-            # Toggle favorite button
-            if widget.desktop_file() not in self.__favorite_apps.apps:
-                # If widget is not a favorite app and 'unpin' is showed...
+            # Toggle pin button
+            if widget.desktop_file() not in self.__pin_apps.apps:
+                # If widget is not a pin app and 'unpin' is showed...
                 if not widget.app_launcher_context_menu(
-                        ).favorite_button_is_visible():
+                        ).pin_button_is_visible():
                     # ... else show the 'pin' button
-                    self.__context_app_launcher.toggle_favorite_button()
+                    self.__context_app_launcher.toggle_pin_button()
 
-    def __on_app_launcher_context_menu_enter_event(self, widget):
-        # ...
+    def __on_app_launcher_context_menu_enter_event(
+            self, widget: widgets.AppLauncherContextMenuButton) -> None:
+        # Add status bar context menu info
+
+        # Show in the status bar more information about the context menu ...
+        # ...button that the mouse hovers over
         if widget.button_id() == 'go-back':
             self.__status_bar.set_text(
                 'Closes the context menu and returns to application view')
-        elif widget.button_id() == 'favorite':
+        elif widget.button_id() == 'pin':
             self.__status_bar.set_text(
-                "Pin application on menu home page, in the 'Favorite' section")
+                "Pin application on menu home page, in the Pin's section")
+        elif widget.button_id() == 'unpin':
+            self.__status_bar.set_text(
+                "Unpin the application from the menu home page under the "
+                "Pin's section")
         elif widget.button_id() == 'shortcut':
             self.__status_bar.set_text('Create an app shortcut on the desktop')
         elif widget.button_id() == 'hide':
             self.__status_bar.set_text('Hide app from menu')
 
-    def __on_app_launcher_enter_event(self, widget):
-        # Add status bar info
+    def __on_app_launcher_enter_event(
+            self, widget: widgets.AppLauncher) -> None:
+        # Add status bar app launcher info
+
+        # Show more information about the app in the status bar when the ...
+        # ...mouse hovers over the app launcher
 
         # Language code
         local, escope = (locale.getdefaultlocale()[0], '[Desktop Entry]')
@@ -678,12 +701,12 @@ class MainWindow(QtWidgets.QMainWindow):
         text = f'{name.strip(":").strip(".")}{generic_name}{coment}'
         self.__status_bar.set_text(text)
 
-    def __on_app_launcher_leave_event(self):
+    def __on_app_launcher_leave_event(self) -> None:
         # Clear status bar
         self.__status_bar.set_text(' ')
 
-    def __on_energy_buttons(self, widget):
-        # ...
+    def __on_energy_buttons(self, widget: widgets.EnergyButton) -> None:
+        # When one energy button is clicked
         if widget.name_id() == 'system-lock-screen':
             print('Run "system-lock-screen" and close')
         elif widget.name_id() == 'system-log-out':
@@ -698,8 +721,15 @@ class MainWindow(QtWidgets.QMainWindow):
             print('Run "system-shutdown" and close')
         self.close()
 
-    def event_filter(self, widget, event):
-        """..."""
+    def event_filter(
+            self, widget: QtWidgets.QMainWindow, event: QtCore.QEvent) -> None:
+        """Traces the keys
+
+        Used to manipulate keys and shortcuts.
+
+        :param widget: QMainWindow that receives the event
+        :param event: QEvent that captures keyboard keys
+        """
         if event.type() == QtCore.QEvent.KeyPress and widget is self:
             key = event.key()
             text = event.text()
@@ -724,24 +754,37 @@ class MainWindow(QtWidgets.QMainWindow):
 
         return QtWidgets.QWidget.event_filter(self, widget, event)
 
-    def mouse_press_event(self, event):
-        """..."""
+    def mouse_press_event(self, event: QtCore.QEvent) -> None:
+        """Mouse click event on the widget
+
+        Emits a signal that the widget has been clicked.
+
+        :param event: QEvent that captures keyboard keys
+        """
         if event.button() == QtCore.Qt.LeftButton:
             print('MainWindow close')
             self.close()
 
 
 class Application(object):
-    """Desktop menu for Linux written in Python and Qt."""
-    def __init__(self, args):
-        """Class constructor."""
+    """Desktop menu for Linux written in Python and Qt"""
+    def __init__(self, args: list) -> None:
+        """Class constructor
+
+        Initialize class attributes.
+
+        :param args: List of command line arguments
+        """
         self.__application = QtWidgets.QApplication(args)
         self.__application_icon = 'tuxmenu.png'
         self.__application_name = 'TuxMenu'
         self.__application_window = MainWindow()
 
     def main(self) -> None:
-        """Start the app."""
+        """Start the app
+
+        Sets basic window details and starts the application.
+        """
         # Name
         self.__application_window.set_window_title(self.__application_name)
 
