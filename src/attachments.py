@@ -347,6 +347,43 @@ class MenuSchema(object):
         return f'<MenuSchema: {id(self)}>'
 
 
+class EnergyButtonsSchema(object):
+    """Template to build the energy buttons."""
+    def __init__(self) -> None:
+        """Class constructor
+
+        Initialize class properties.
+        """
+        self.__schema = {
+            'lock-screen': {
+                'icon-name': 'system-lock-screen',
+                'command': ''},
+            'suspend': {
+                'icon-name': 'system-suspend',
+                'command': ''},
+            'reboot': {
+                'icon-name': 'system-reboot',
+                'command': ''},
+            'shutdown': {
+                'icon-name': 'system-shutdown',
+                'command': ''},
+            'log-out': {
+                'icon-name': 'system-log-out',
+                'command': ''},
+            'switch-user': {
+                'icon-name': 'system-switch-user',
+                'command': ''}}
+
+    @property
+    def schema(self) -> dict:
+        """Energy buttons template as a dict
+
+        A dictionary that contains the button id as keys. each item stores
+        a dictionary with the name of the icon and the command.
+        """
+        return self.__schema
+
+
 class SavedApps(object):
     """Configure saved apps"""
     def __init__(self, config_name: str):

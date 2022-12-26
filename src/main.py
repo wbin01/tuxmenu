@@ -28,8 +28,10 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         super().__init__(*args, **kwargs)
         self.__set_style()
+
         self.__menu_schema = None
-        self.__active_context_app_launcher = None
+        self.__energy_buttons_schema = None
+        self.__active_context_menu_app_launcher = None
 
         # Main container
         self.__main_container = QtWidgets.QWidget()
@@ -112,7 +114,7 @@ class MainWindow(QtWidgets.QMainWindow):
             target=self.__mount_pin_apps_thread)    # thread
 
         # App pages
-        self.__app_pages_created = False
+        self.app_pages_have_been_created = False
         self.__mount_apps_signal.connect(self.__mount_apps)
         self.__apps_thread = threading.Thread(  # start() on category button
             target=self.__mount_apps_thread)
@@ -221,18 +223,19 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __mount_energy_buttons(self) -> None:
         # Mount energy buttons
-        icon_names = [
-            'system-lock-screen', 'system-log-out', 'system-suspend',
-            'system-reboot', 'system-shutdown']  # 'system-switch-user'
-        for name in icon_names:
-            lock_screen_button = widgets.EnergyButton(icon_name=name)
-            lock_screen_button.clicked_signal().connect(
+
+        self.__energy_buttons_schema = attachments.EnergyButtonsSchema()
+        for name_id, values in self.__energy_buttons_schema.schema.items():
+            energy_button = widgets.EnergyButton(
+                icon_name=values['icon-name'],
+                name_id=name_id)
+            energy_button.clicked_signal().connect(
                 lambda widget: self.__on_energy_buttons(widget))
-            self.__energy_buttons_layout.add_widget(lock_screen_button)
+            self.__energy_buttons_layout.add_widget(energy_button)
 
     def __mount_apps_thread(self) -> None:
         # Wait for render and mount app launchers
-        time.sleep(0.05)
+        time.sleep(0.01)
         self.__mount_apps_signal.emit(0)
 
     def __mount_apps(self) -> None:
@@ -240,9 +243,7 @@ class MainWindow(QtWidgets.QMainWindow):
         for categ, apps in self.__menu_schema.schema.items():
             if not apps or categ == 'All':
                 continue
-
             self.__mount_app_grid(desktop_file_list=apps)
-
         self.__active_category_button.clicked_signal().emit(0)
 
     def __mount_app_grid(
@@ -305,103 +306,115 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.__category_buttons_layout.item_at(0).widget().is_enabled():
                 self.__show_searched_apps_page(show=True)
 
-            desktop_apps = []
-            local = locale.getdefaultlocale()[0]
-            escope = '[Desktop Entry]'
-            for desk_app in self.__menu_schema.schema['All']:
-
-                # Name[<local>]
-                if (f'Name[{local}]' in desk_app.content[escope]
-                        and text in desk_app.content[escope][
-                            f'Name[{local}]'].lower()):
-                    desktop_apps.append(desk_app)
-
-                # Name: Always exists
-                elif text in desk_app.content[escope]['Name'].lower():
-                    desktop_apps.append(desk_app)
-
-                # GenericName[<local>]
-                elif (f'GenericName[{local}]' in desk_app.content[escope]
-                      and text in desk_app.content[escope][
-                            f'GenericName[{local}]'].lower()):
-                    desktop_apps.append(desk_app)
-
-                # GenericName
-                elif ('GenericName' in desk_app.content[escope]
-                        and text in desk_app.content[escope][
-                          'GenericName'].lower()):
-                    desktop_apps.append(desk_app)
-
-                # Coment[<local>]
-                elif (f'Comment[{local}]' in desk_app.content[escope]
-                        and text in desk_app.content[escope][
-                            f'Comment[{local}]'].lower()):
-                    desktop_apps.append(desk_app)
-
-                # Coment
-                elif ('Comment' in desk_app.content[escope]
-                        and text in desk_app.content[escope]['Comment']
-                        .lower()):
-                    desktop_apps.append(desk_app)
-
-                # Exec: Always exists
-                elif text in desk_app.content[escope]['Exec'].lower():
-                    desktop_apps.append(desk_app)
-
-            if desktop_apps:
-                # Total apps per search
-                total_apps_per_search = self.__app_grid_columns * 4
-                if len(desktop_apps) > total_apps_per_search:
-                    desktop_apps = desktop_apps[:total_apps_per_search]
-
-                # Clear old apps page
-                self.__app_grid_stacked_layout.set_current_index(0)
-                self.__app_grid_stacked_layout.remove_widget(
-                    self.__app_grid_stacked_layout.current_widget())
-
-                # Create new apps page
-                app_grid = widgets.AppGrid(
-                    desktop_file_list=desktop_apps,
-                    pin_desktop_file_list=self.__pin_apps.apps,
-                    columns_num=self.__app_grid_columns)
-                app_grid.clicked_signal().connect(
-                    lambda widget: self.__on_app_launcher(widget))
-                app_grid.right_clicked_signal().connect(
-                    lambda widget: self.__on_app_launcher_right_click(widget))
-                app_grid.enter_event_signal().connect(
-                    lambda widget: self.__on_app_launcher_enter_event(widget))
-                app_grid.leave_event_signal().connect(
-                    lambda _: self.__on_app_launcher_leave_event())
-                app_grid.set_alignment(QtCore.Qt.AlignTop)
-
-                # Insert new apps page
-                self.__app_grid_stacked_layout.insert_widget(0, app_grid)
-                self.__app_grid_stacked_layout.set_current_index(0)
-
+            desktop_file_list = self.__searched_apps(text=text)
+            if desktop_file_list:
+                self.__mount_searched_apps_grid(
+                    desktop_file_list=desktop_file_list)
             else:
-                # Clear old apps page
-                self.__app_grid_stacked_layout.set_current_index(0)
-                self.__app_grid_stacked_layout.remove_widget(
-                    self.__app_grid_stacked_layout.current_widget())
-
-                # Message
-                no_apps_message = QtWidgets.QLabel('No apps found!')
-                no_apps_message.set_alignment(QtCore.Qt.AlignCenter)
-                no_apps_message.set_style_sheet(
-                    'background: transparent; font-size: 30px;')
-
-                # Insert message
-                self.__app_grid_stacked_layout.insert_widget(
-                    0, no_apps_message)
-                self.__app_grid_stacked_layout.set_current_index(0)
+                self.__mount_empty_searched_apps_grid()
 
         else:  # Restore default menu layout
             self.__show_searched_apps_page(show=False)
 
+    def __searched_apps(self, text: str) -> list:
+        # Searched app list [DesktopFile, DesktopFile]
+        desktop_files = []
+        local = locale.getdefaultlocale()[0]
+        escope = '[Desktop Entry]'
+        for desk_app in self.__menu_schema.schema['All']:
+
+            # Name[<local>]
+            if (f'Name[{local}]' in desk_app.content[escope]
+                    and text in desk_app.content[escope][
+                        f'Name[{local}]'].lower()):
+                desktop_files.append(desk_app)
+
+            # Name: Always exists
+            elif text in desk_app.content[escope]['Name'].lower():
+                desktop_files.append(desk_app)
+
+            # GenericName[<local>]
+            elif (f'GenericName[{local}]' in desk_app.content[escope]
+                  and text in desk_app.content[escope][
+                      f'GenericName[{local}]'].lower()):
+                desktop_files.append(desk_app)
+
+            # GenericName
+            elif ('GenericName' in desk_app.content[escope]
+                  and text in desk_app.content[escope][
+                      'GenericName'].lower()):
+                desktop_files.append(desk_app)
+
+            # Coment[<local>]
+            elif (f'Comment[{local}]' in desk_app.content[escope]
+                  and text in desk_app.content[escope][
+                      f'Comment[{local}]'].lower()):
+                desktop_files.append(desk_app)
+
+            # Coment
+            elif ('Comment' in desk_app.content[escope]
+                  and text in desk_app.content[escope]['Comment'].lower()):
+                desktop_files.append(desk_app)
+
+            # Exec: Always exists
+            elif text in desk_app.content[escope]['Exec'].lower():
+                desktop_files.append(desk_app)
+
+        return desktop_files
+
+    def __mount_searched_apps_grid(self, desktop_file_list: list) -> None:
+        # Searched app grid
+
+        # Total apps per search
+        total_apps_per_search = self.__app_grid_columns * 4
+        if len(desktop_file_list) > total_apps_per_search:
+            desktop_file_list = (
+                desktop_file_list[:total_apps_per_search])
+
+        # Clear old apps page
+        self.__app_grid_stacked_layout.set_current_index(0)
+        self.__app_grid_stacked_layout.remove_widget(
+            self.__app_grid_stacked_layout.current_widget())
+
+        # Create new apps page
+        app_grid = widgets.AppGrid(
+            desktop_file_list=desktop_file_list,
+            pin_desktop_file_list=self.__pin_apps.apps,
+            columns_num=self.__app_grid_columns)
+        app_grid.clicked_signal().connect(
+            lambda widget: self.__on_app_launcher(widget))
+        app_grid.right_clicked_signal().connect(
+            lambda widget: self.__on_app_launcher_right_click(widget))
+        app_grid.enter_event_signal().connect(
+            lambda widget: self.__on_app_launcher_enter_event(widget))
+        app_grid.leave_event_signal().connect(
+            lambda _: self.__on_app_launcher_leave_event())
+        app_grid.set_alignment(QtCore.Qt.AlignTop)
+
+        # Insert new apps page
+        self.__app_grid_stacked_layout.insert_widget(0, app_grid)
+        self.__app_grid_stacked_layout.set_current_index(0)
+
+    def __mount_empty_searched_apps_grid(self) -> None:
+        # Clear old apps page
+        self.__app_grid_stacked_layout.set_current_index(0)
+        self.__app_grid_stacked_layout.remove_widget(
+            self.__app_grid_stacked_layout.current_widget())
+
+        # Message
+        no_apps_message = QtWidgets.QLabel('No apps found!')
+        no_apps_message.set_alignment(QtCore.Qt.AlignCenter)
+        no_apps_message.set_style_sheet(
+            'background: transparent; font-size: 30px;')
+
+        # Insert message
+        self.__app_grid_stacked_layout.insert_widget(
+            0, no_apps_message)
+        self.__app_grid_stacked_layout.set_current_index(0)
+
     def __show_searched_apps_page(self, show: bool) -> None:
         # Back to home category (Recents and Pin's)
-        first_button = self.__category_buttons_layout.item_at(
-            0).widget()
+        first_button = self.__category_buttons_layout.item_at(0).widget()
         if not first_button.check_state():
             first_button.clicked_signal().emit(0)
 
@@ -421,27 +434,30 @@ class MainWindow(QtWidgets.QMainWindow):
             item.widget().set_enabled(enabled_status)
             item.widget().set_enter_event_enabled(enabled_status)
 
+    def __close_active_context_menus(self):
+        # Close context menus
+        if self.__active_context_menu_app_launcher:
+            (self.__active_context_menu_app_launcher
+                .set_context_menu_to_visible(visible=False))
+
     def __on_category_button(self) -> None:
         # When mouse cursor hovers over category button
-
-        # Close context menus
-        if self.__context_app_launcher:
-            self.__context_app_launcher.set_context_menu_to_visible(False)
+        self.__close_active_context_menus()
 
         # Active category button state (highlight fixed)
         if self.__active_category_button:
             self.__active_category_button.set_check_state(state=False)
-        self.sender().set_check_state(state=True)
         self.__active_category_button = self.sender()
+        self.__active_category_button.set_check_state(state=True)
 
-        # Create page
-        if not self.__app_pages_created:
-            self.__app_pages_created = True
+        # Create apps page for all categories
+        if not self.app_pages_have_been_created:
             self.__apps_thread.start()
+            self.app_pages_have_been_created = True
 
         # Show page
         self.__app_grid_stacked_layout.set_current_index(
-            self.sender().page_index)
+            self.__active_category_button.page_index)
 
     def __on_app_launcher(
             self,
@@ -501,19 +517,19 @@ class MainWindow(QtWidgets.QMainWindow):
         # Reset status bar text
         self.__status_bar.set_text(self.__status_bar_temp_text)
         # Close active context menu
-        self.__context_app_launcher.set_context_menu_to_visible(False)
+        self.__close_active_context_menus()
 
     def __on_app_launcher_pin_context_menu_button(self) -> None:
         # Pin's
 
         # Toggle pin button
-        self.__context_app_launcher.toggle_pin_button()
+        self.__active_context_menu_app_launcher.toggle_pin_button()
 
         # Insert fav app on app list
-        if (self.__context_app_launcher.desktop_file()
+        if (self.__active_context_menu_app_launcher.desktop_file()
                 not in self.__pin_apps.apps):
             self.__pin_apps.apps.insert(
-                0, self.__context_app_launcher.desktop_file())
+                0, self.__active_context_menu_app_launcher.desktop_file())
 
             # Save configs
             self.__pin_apps.save_apps(url_list_apps=[
@@ -529,22 +545,20 @@ class MainWindow(QtWidgets.QMainWindow):
         # Render new app list
         self.__mount_pin_apps()
 
-        # Close active context menu
-        self.__context_app_launcher.set_context_menu_to_visible(False)
-
+        self.__close_active_context_menus()
         print('Context menu: Pin')
 
     def __on_app_launcher_unpin_context_menu_button(self) -> None:
-
         # Unpin
+
         # Toggle pin button
-        self.__context_app_launcher.toggle_pin_button()
+        self.__active_context_menu_app_launcher.toggle_pin_button()
 
         # Remove pin app on app list
-        if (self.__context_app_launcher.desktop_file()
+        if (self.__active_context_menu_app_launcher.desktop_file()
                 in self.__pin_apps.apps):
             self.__pin_apps.apps.remove(
-                self.__context_app_launcher.desktop_file())
+                self.__active_context_menu_app_launcher.desktop_file())
 
             # Save configs
             self.__pin_apps.save_apps(url_list_apps=[
@@ -560,9 +574,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Render new app list
         self.__mount_pin_apps()
 
-        # Close active context menu
-        self.__context_app_launcher.set_context_menu_to_visible(False)
-
+        self.__close_active_context_menus()
         print('Context menu: Unpin')
         return
 
@@ -584,9 +596,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Show context menu
         if not widget.context_menu_is_visible():
-            if self.__active_context_app_launcher:  # Close other context menus
-                self.__active_context_app_launcher.set_context_menu_to_visible(
-                    False)
+            self.__close_active_context_menus()
 
             widget.set_context_menu_to_visible(True)
             self.__active_context_app_launcher = widget
@@ -595,7 +605,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.__on_app_launcher_context_menu_enter_event)
 
             # Save widget
-            self.__context_app_launcher = widget
+            self.__active_context_menu_app_launcher = widget
 
             # Toggle pin button
             if widget.desktop_file() not in self.__pin_apps.apps:
@@ -603,7 +613,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 if not widget.app_launcher_context_menu(
                         ).pin_button_is_visible():
                     # ... else show the 'pin' button
-                    self.__context_app_launcher.toggle_pin_button()
+                    self.__active_context_menu_app_launcher.toggle_pin_button()
 
     def __on_app_launcher_context_menu_enter_event(
             self, widget: widgets.AppLauncherContextMenuButton) -> None:
@@ -628,10 +638,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __on_app_launcher_enter_event(
             self, widget: widgets.AppLauncher) -> None:
-        # Add status bar app launcher info
-
-        # Show more information about the app in the status bar when the ...
-        # ...mouse hovers over the app launcher
+        # Add status bar information about the app
 
         # Language code
         local, escope = (locale.getdefaultlocale()[0], '[Desktop Entry]')
@@ -675,18 +682,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __on_energy_buttons(self, widget: widgets.EnergyButton) -> None:
         # When one energy button is clicked
-        if widget.name_id() == 'system-lock-screen':
-            print('Run "system-lock-screen" and close')
-        elif widget.name_id() == 'system-log-out':
-            print('Run "system-log-out" and close')
-        elif widget.name_id() == 'system-suspend':
-            print('Run "system-suspend" and close')
-        elif widget.name_id() == 'system-switch-user':
-            print('Run "system-switch-user" and close')
-        elif widget.name_id() == 'system-reboot':
-            print('Run "system-reboot" and close')
-        elif widget.name_id() == 'system-shutdown':
-            print('Run "system-shutdown" and close')
+        for name_id in self.__energy_buttons_schema.schema:
+            if widget.name_id() == name_id:
+                print(f'Run "{name_id}" and close')
         self.close()
 
     def event_filter(
