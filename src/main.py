@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import locale
 import os
+import shutil
+import subprocess
 import sys
 import threading
 import time
@@ -576,15 +578,41 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.__close_active_context_menus()
         print('Context menu: Unpin')
-        return
 
     def __on_app_launcher_shortcut_context_menu_button(self) -> None:
-        print(self)
         print('Context menu: Shortcut')
 
-    def __on_app_launcher_hide_context_menu_button(self) -> None:
-        print(self)
-        print('Context menu: Hide')
+        # Desktop: default
+        desktop_path = os.path.join(os.environ['HOME'], 'Desktop')
+
+        # Desktop: XDG_DESKTOP_DIR
+        user_dirs_file = os.path.join(
+            os.environ['HOME'], '.config', 'user-dirs.dirs')
+        if os.path.isfile(user_dirs_file):
+            with open(user_dirs_file, 'r') as dirs_file:
+                dirs_file_lines = dirs_file.readlines()
+
+            for line in dirs_file_lines:
+                if 'XDG_DESKTOP_DIR=' in line:
+                    desktop_path = line.split('=')[1].strip().strip('"')
+
+        # Source and destination
+        source = self.__active_context_menu_app_launcher.desktop_file().url
+        destination = os.path.join(
+            desktop_path.replace('$HOME', os.environ['HOME']),
+            os.path.basename(source))
+
+        # Copy shortcut to desktop
+        if not os.path.isfile(destination):
+            shutil.copyfile(source, destination)
+
+            # Make shortcut executable
+            executable_command = subprocess.Popen(
+                ['chmod', '+x', destination],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            _stdout, _stderr = executable_command.communicate()
+
+        self.__close_active_context_menus()
 
     def __on_app_launcher_right_click(
             self, widget: widgets.AppLauncher) -> None:
