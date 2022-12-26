@@ -252,7 +252,7 @@ class MenuSchema(object):
             'Game': [], 'Graphics': [], 'Network': [], 'Office': [],
             'Settings': [], 'System': [], 'Utility': [], 'Others': []}
         self.__icons_schema = {
-            'All': 'applications-all',
+            'Home': 'applications-all', 'All': 'applications-all',
             'Development': 'applications-development',
             'Education': 'applications-education',
             'Multimedia': 'applications-multimedia',
