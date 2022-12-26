@@ -678,6 +678,7 @@ class CategoryButton(QtWidgets.QWidget):
     A custom button to use for category pagination.
     """
     __clicked_signal = QtCore.Signal(object)
+    __enter_event_signal = QtCore.Signal(object)
 
     def __init__(
             self, text: str = None, icon_name: str = None,
@@ -766,6 +767,13 @@ class CategoryButton(QtWidgets.QWidget):
         """
         return self.__clicked_signal
 
+    def enter_event_signal(self) -> QtCore.Signal:
+        """Mouse hover event
+
+        Gets the signal that is emitted when the mouse hovers over the widget.
+        """
+        return self.__enter_event_signal
+
     def check_state(self) -> bool:
         """Checks the state of the button
 
@@ -836,6 +844,7 @@ class CategoryButton(QtWidgets.QWidget):
                 self.__main_container.set_style_sheet("""
                     background-color: rgba(255, 255, 255, 0.05);""")
             self.__clicked_signal.emit(self)
+            self.__enter_event_signal.emit(self)
             event.ignore()
 
     def leave_event(self, event: QtCore.QEvent) -> None:
