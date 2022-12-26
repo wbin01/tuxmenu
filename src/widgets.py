@@ -227,11 +227,11 @@ class AppLauncherContextMenu(QtWidgets.QWidget):
         shortcut.enter_event_signal().connect(self.__on_button_enter_event)
         body_layout.add_widget(shortcut)
 
-        hide = AppLauncherContextMenuButton(
-            text='Hide', icon_name='view-hidden', button_id='hide')
-        hide.clicked_signal().connect(self.__on_button)
-        hide.enter_event_signal().connect(self.__on_button_enter_event)
-        body_layout.add_widget(hide)
+        # hide = AppLauncherContextMenuButton(
+        #     text='Hide', icon_name='view-hidden', button_id='hide')
+        # hide.clicked_signal().connect(self.__on_button)
+        # hide.enter_event_signal().connect(self.__on_button_enter_event)
+        # body_layout.add_widget(hide)
 
     def toggle_pin_button(self) -> None:
         """Toggle pin button.
