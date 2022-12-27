@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import locale
+import logging
 import os
 import shutil
 import subprocess
@@ -116,12 +117,13 @@ class MainWindow(QtWidgets.QMainWindow):
             target=self.__mount_pin_apps_thread)    # thread
 
         # App pages
-        self.app_pages_have_been_created = False
+        self.__app_pages_have_been_created = False
         self.__mount_apps_signal.connect(self.__mount_apps)
         self.__apps_thread = threading.Thread(  # start() on category button
             target=self.__mount_apps_thread)
 
         # Energy buttons layout
+        self.__energy_buttons_pages_have_been_created = False
         self.__energy_buttons_layout = QtWidgets.QVBoxLayout()
         self.__energy_buttons_layout.set_contents_margins(10, 0, 10, 0)
         self.__energy_buttons_layout.set_spacing(10)
@@ -213,10 +215,9 @@ class MainWindow(QtWidgets.QMainWindow):
             title="Pin's")
 
         # Category buttons
-        try:
+        if not self.__energy_buttons_pages_have_been_created:
             self.__energy_buttons_thread.start()
-        except Exception as err:
-            print(type(err))
+            self.__energy_buttons_pages_have_been_created = True
 
     def __mount_energy_buttons_thread(self) -> None:
         # Wait for category buttons to render and mount energy buttons
@@ -230,9 +231,14 @@ class MainWindow(QtWidgets.QMainWindow):
         for name_id, values in self.__energy_buttons_schema.schema.items():
             energy_button = widgets.EnergyButton(
                 icon_name=values['icon-name'],
+                text=values['text'],
                 name_id=name_id)
             energy_button.clicked_signal().connect(
                 lambda widget: self.__on_energy_buttons(widget))
+            energy_button.enter_event_signal().connect(
+                lambda widget: self.__on_energy_buttons_enter_event(widget))
+            energy_button.leave_event_signal().connect(
+                lambda _: self.__on_energy_buttons_leave_event())
             self.__energy_buttons_layout.add_widget(energy_button)
 
     def __mount_apps_thread(self) -> None:
@@ -453,9 +459,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__active_category_button.set_check_state(state=True)
 
         # Create apps page for all categories
-        if not self.app_pages_have_been_created:
+        if not self.__app_pages_have_been_created:
             self.__apps_thread.start()
-            self.app_pages_have_been_created = True
+            self.__app_pages_have_been_created = True
 
         # Show page
         self.__app_grid_stacked_layout.set_current_index(
@@ -482,17 +488,24 @@ class MainWindow(QtWidgets.QMainWindow):
             self.__recent_apps.apps.insert(0, widget.desktop_file())
             self.__recent_apps.save_apps(
                 url_list_apps=[x.url for x in self.__recent_apps.apps])
-            print(f'Run "AppLauncher: {widget.desktop_file()}" and close')
+
+            # Exec
+            exe = widget.desktop_file().content['[Desktop Entry]']['Exec']
+            exec_command = exe.split(' %', 1)[0] if ' %' in exe else exe
+            subprocess.Popen(exec_command.strip().split())
+            print(widget)
 
         # Ghost AppLauncher
         elif isinstance(widget, widgets.GhostAppLauncher):
-            print(f'Run "GhostAppLauncher" and close')
+            print(widget)
 
         # Context menu button
         elif isinstance(widget, widgets.AppLauncherContextMenuButton):
             self.__on_app_launcher_context_menu_buttons(widget=widget)
+            print(widget)
             return
 
+        print('<QtWidgets.QMainWindow: close>')
         self.close()
 
     def __on_app_launcher_context_menu_buttons(
@@ -509,9 +522,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         elif widget.button_id() == 'shortcut':
             self.__on_app_launcher_shortcut_context_menu_button()
-
-        elif widget.button_id() == 'hide':
-            self.__on_app_launcher_hide_context_menu_button()
 
     def __on_app_launcher_go_back_context_menu_button(self) -> None:
         # Go back
@@ -548,7 +558,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__mount_pin_apps()
 
         self.__close_active_context_menus()
-        print('Context menu: Pin')
 
     def __on_app_launcher_unpin_context_menu_button(self) -> None:
         # Unpin
@@ -577,11 +586,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__mount_pin_apps()
 
         self.__close_active_context_menus()
-        print('Context menu: Unpin')
 
     def __on_app_launcher_shortcut_context_menu_button(self) -> None:
-        print('Context menu: Shortcut')
-
         # Desktop: default
         desktop_path = os.path.join(os.environ['HOME'], 'Desktop')
 
@@ -616,8 +622,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __on_app_launcher_right_click(
             self, widget: widgets.AppLauncher) -> None:
-        # When the app is clicked, this method is triggered
-        print(f'Right click on "AppLauncher: {widget.desktop_file()}"')
+        # App launcher right click
 
         # Save status bar text
         self.__status_bar_temp_text = self.__status_bar.text()
@@ -642,6 +647,8 @@ class MainWindow(QtWidgets.QMainWindow):
                         ).pin_button_is_visible():
                     # ... else show the 'pin' button
                     self.__active_context_menu_app_launcher.toggle_pin_button()
+
+        print(widget, '<QtCore.Qt.RightButton>')
 
     def __on_app_launcher_context_menu_enter_event(
             self, widget: widgets.AppLauncherContextMenuButton) -> None:
@@ -710,10 +717,28 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __on_energy_buttons(self, widget: widgets.EnergyButton) -> None:
         # When one energy button is clicked
-        for name_id in self.__energy_buttons_schema.schema:
+        for name_id, values in self.__energy_buttons_schema.schema.items():
             if widget.name_id() == name_id:
-                print(f'Run "{name_id}" and close')
+                if values['command']:
+                    command = subprocess.Popen(
+                        values['command'],
+                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    _stdout, _stderr = command.communicate()
+
+                print(widget)
+                break
+
+        print('<QtWidgets.QMainWindow: close>')
         self.close()
+
+    def __on_energy_buttons_enter_event(
+            self, widget: widgets.EnergyButton) -> None:
+        # Add status bar information about this energy button
+        self.__status_bar.set_text(widget.text())
+
+    def __on_energy_buttons_leave_event(self) -> None:
+        # Clear status bar
+        self.__status_bar.set_text(' ')
 
     def event_filter(
             self, widget: QtWidgets.QMainWindow, event: QtCore.QEvent) -> None:
@@ -733,10 +758,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 # text = ''  # Fix espace
 
             elif key == QtCore.Qt.Key_Return or key == QtCore.Qt.Key_Enter:
-                print("Enter key pressed")
+                print('<QtCore.Qt.Key_Enter>')
                 # focus_widget = QtWidgets.QApplication.focus_widget()
                 # if isinstance(focus_widget, widgets.AppLauncher):
                 #     print(focus_widget)
+                #     print('<QtWidgets.QMainWindow: close>')
                 #     self.close()
 
             elif key == QtCore.Qt.Key_Backspace:
@@ -756,7 +782,7 @@ class MainWindow(QtWidgets.QMainWindow):
         :param event: QEvent that captures keyboard keys
         """
         if event.button() == QtCore.Qt.LeftButton:
-            print('MainWindow close')
+            print('<QtWidgets.QMainWindow: close>')
             self.close()
 
 
@@ -796,7 +822,7 @@ class Application(object):
         GlobalBlur(self.__application_window.win_id(), Dark=True, QWidget=self)
 
         # Show | show_maximized show_full_screen show
-        self.__application_window.show_maximized()
+        self.__application_window.show_full_screen()
         sys.exit(self.__application.exec())
 
 

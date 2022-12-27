@@ -148,7 +148,7 @@ class AppLauncherContextMenuButton(QtWidgets.QWidget):
         event.ignore()
 
     def __str__(self) -> str:
-        return f'<AppLauncherContextMenuButton: {self.__text}>'
+        return f'<AppLauncherContextMenuButton: {self.__button_id}>'
 
 
 class AppLauncherContextMenu(QtWidgets.QWidget):
@@ -288,8 +288,8 @@ class AppLauncherContextMenu(QtWidgets.QWidget):
 
     def __str__(self) -> str:
         # String for print() fn
-        return ('<AppLauncherContextMenu: '
-                f'{self.__desktop_file.content["[Desktop Entry]"]["Name"]}>')
+        name = self.__desktop_file.content['[Desktop Entry]']['Name']
+        return f'<AppLauncherContextMenu: {name}>'
 
 
 class AppLauncher(QtWidgets.QWidget):
@@ -513,7 +513,7 @@ class AppLauncher(QtWidgets.QWidget):
         app_name.set_alignment(
             QtCore.Qt.AlignTop | QtCore.Qt.AlignHCenter)
         app_name.set_style_sheet('background-color: transparent;')
-        app_name.set_fixed_width(100)
+        app_name.set_fixed_width(130)
         app_name_layout.add_widget(app_name)
         self.__body_layout.add_layout(app_name_layout)
 
@@ -871,10 +871,12 @@ class EnergyButton(QtWidgets.QWidget):
     A custom button to use for category pagination.
     """
     __clicked_signal = QtCore.Signal(object)
+    __enter_event_signal = QtCore.Signal(object)
+    __leave_event_signal = QtCore.Signal(object)
 
     def __init__(
             self,
-            icon_name: str, name_id: str = None,
+            icon_name: str, text: str = None, name_id: str = None,
             *args, **kwargs) -> None:
         """Class constructor
 
@@ -885,6 +887,7 @@ class EnergyButton(QtWidgets.QWidget):
         """
         super().__init__(*args, **kwargs)
         self.__icon_name = icon_name
+        self.__text = text
         self.__name_id = name_id if name_id else self.__icon_name
         self.__enter_event_enabled = True
 
@@ -925,6 +928,13 @@ class EnergyButton(QtWidgets.QWidget):
         """
         return self.__name_id
 
+    def text(self) -> str:
+        """Button text
+
+        Gets the text label of the button.
+        """
+        return self.__text
+
     def icon_name(self) -> str:
         """Icon name
 
@@ -949,6 +959,21 @@ class EnergyButton(QtWidgets.QWidget):
         """
         return self.__clicked_signal
 
+    def enter_event_signal(self) -> QtCore.Signal:
+        """Mouse hover event
+
+        Gets the signal that is emitted when the mouse hovers over the widget.
+        """
+        return self.__enter_event_signal
+
+    def leave_event_signal(self) -> QtCore.Signal:
+        """Mouse-over event outside the widget
+
+        Gets the signal that is emitted when the mouse leaves the top of
+        the widget.
+        """
+        return self.__leave_event_signal
+
     def mouse_press_event(self, event: QtCore.QEvent) -> None:
         """Mouse click event on the widget
 
@@ -970,6 +995,7 @@ class EnergyButton(QtWidgets.QWidget):
             self.__icon_view.set_style_sheet("""
                 border-radius: 40px;
                 background-color: rgba(255, 255, 255, 0.05);""")
+        self.__enter_event_signal.emit(self)
         event.ignore()
 
     def leave_event(self, event: QtCore.QEvent) -> None:
@@ -981,6 +1007,7 @@ class EnergyButton(QtWidgets.QWidget):
         """
         if self.__enter_event_enabled:
             self.__icon_view.set_style_sheet('background: transparent;')
+        self.__leave_event_signal.emit(self)
         event.ignore()
 
     def __str__(self) -> str:
