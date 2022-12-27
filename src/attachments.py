@@ -356,23 +356,29 @@ class EnergyButtonsSchema(object):
         """
         self.__schema = {
             'lock-screen': {
+                'text': 'Lock screen',
                 'icon-name': 'system-lock-screen',
-                'command': ''},
+                'command': ['loginctl', 'lock-session']},
             'suspend': {
+                'text': 'Suspend',
                 'icon-name': 'system-suspend',
-                'command': ''},
+                'command': ['systemctl', 'suspend']},  # systemctl hibernate
             'reboot': {
+                'text': 'Reboot',
                 'icon-name': 'system-reboot',
-                'command': ''},
+                'command': ['systemctl', 'reboot']},
             'shutdown': {
+                'text': 'Shutdown',
                 'icon-name': 'system-shutdown',
-                'command': ''},
+                'command': ['systemctl', 'poweroff']},
             'log-out': {
+                'text': 'Log-out',
                 'icon-name': 'system-log-out',
-                'command': ''},
+                'command': None},
             'switch-user': {
+                'text': 'Switch user',
                 'icon-name': 'system-switch-user',
-                'command': ''}}
+                'command': None}}
 
     @property
     def schema(self) -> dict:
