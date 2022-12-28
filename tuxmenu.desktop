@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=TuxMenu
+Categories=Utility;
+Exec=/usr/share/tuxmenu/tuxmenu
+Icon=show-grid

@@ -1256,3 +1256,152 @@ class ElidedLabel(QtWidgets.QLabel):
     def __str__(self) -> str:
         # String for print() fn
         return f'<ElidedLabel: {id(self)}>'
+
+
+class ActionButton(QtWidgets.QWidget):
+    """Button widget
+
+    A custom action button.
+    """
+    __clicked_signal = QtCore.Signal(object)
+    __enter_event_signal = QtCore.Signal(object)
+    __leave_event_signal = QtCore.Signal(object)
+
+    def __init__(
+            self,
+            icon_name: str, text: str = None, name_id: str = None,
+            *args, **kwargs) -> None:
+        """Class constructor
+
+        Initialize class attributes.
+
+        :param icon_name: Name of the icon that will be displayed on the button
+        :param name_id: ID set manually
+        """
+        super().__init__(*args, **kwargs)
+        self.__icon_name = icon_name
+        self.__text = text
+        self.__name_id = name_id if name_id else self.__icon_name
+
+        self.__main_layout = QtWidgets.QVBoxLayout()
+        self.__main_layout.set_contents_margins(0, 0, 0, 0)
+        self.__main_layout.set_spacing(0)
+        self.set_layout(self.__main_layout)
+
+        self.__icon_view = QtWidgets.QLabel()
+        self.__icon_view.set_fixed_height(30)
+        self.__icon_view.set_fixed_width(30)
+        self.__icon_view.set_contents_margins(0, 0, 0, 0)
+        self.__icon_view.set_alignment(QtCore.Qt.AlignCenter)
+        self.__icon_view.set_style_sheet('background-color: transparent;')
+
+        self.set_icon_name(self.__icon_name)
+        self.__main_layout.add_widget(self.__icon_view)
+
+    def name_id(self) -> str:
+        """Name ID
+
+        Gets the identifier of the button that was defined by parameter.
+        """
+        return self.__name_id
+
+    def text(self) -> str:
+        """Button text
+
+        Gets the text label of the button.
+        """
+        return self.__text
+
+    def set_text(self, text: str) -> None:
+        """..."""
+        self.__text = text
+
+    def icon_name(self) -> str:
+        """Icon name
+
+        Gets the name of the icon used in the button.
+        """
+        return self.__icon_name
+
+    def set_icon_name(self, icon_name: str) -> None:
+        """Icon name
+
+        Set the icon used in the button.
+        """
+        self.__icon_name = icon_name
+        icon_path = IconTheme.getIconPath(
+            iconname=self.__icon_name,
+            size=22,
+            theme='breeze-dark',
+            extensions=['png', 'svg', 'xpm'])
+        try:
+            pixmap = QtGui.QPixmap(icon_path)
+        except Exception as err:
+            logging.error(err)
+            pixmap = QtGui.QPixmap(os.path.join(
+                os.path.abspath(os.path.dirname(__file__)),
+                'static/defaultapp.svg'))
+
+        scaled_pixmap = pixmap.scaled(
+            22, 22, QtCore.Qt.KeepAspectRatio)
+        self.__icon_view.set_pixmap(scaled_pixmap)
+
+    def clicked_signal(self) -> QtCore.Signal:
+        """Mouse clicked signal
+
+        Gets the signal that indicates that the mouse clicked on the widget.
+        """
+        return self.__clicked_signal
+
+    def enter_event_signal(self) -> QtCore.Signal:
+        """Mouse hover event
+
+        Gets the signal that is emitted when the mouse hovers over the widget.
+        """
+        return self.__enter_event_signal
+
+    def leave_event_signal(self) -> QtCore.Signal:
+        """Mouse-over event outside the widget
+
+        Gets the signal that is emitted when the mouse leaves the top of
+        the widget.
+        """
+        return self.__leave_event_signal
+
+    def mouse_press_event(self, event: QtCore.QEvent) -> None:
+        """Mouse click event on the widget
+
+        Emits a signal that the widget has been clicked.
+
+        :param event: QEvent received by sent signal
+        """
+        if event.button() == QtCore.Qt.LeftButton:
+            self.__clicked_signal.emit(self)
+
+    def enter_event(self, event: QtCore.QEvent) -> None:
+        """Mouse hover event
+
+        Highlight colors when mouse hovers over widget.
+
+        :param event: QEvent received by sent signal
+        """
+        self.__icon_view.set_style_sheet("""
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.05);""")
+        self.__enter_event_signal.emit(self)
+        event.ignore()
+
+    def leave_event(self, event: QtCore.QEvent) -> None:
+        """Mouse-over event outside the widget
+
+        Remove highlighting colors when the mouse leaves the widget.
+
+        :param event: QEvent received by sent signal
+        """
+        self.__icon_view.set_style_sheet('background: transparent;')
+        self.__leave_event_signal.emit(self)
+        event.ignore()
+
+    def __str__(self) -> str:
+        # String for print() fn
+        return f'<ActionButton: {self.__icon_name}>'

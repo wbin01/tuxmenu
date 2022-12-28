@@ -48,6 +48,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__layout_container.set_spacing(0)
         self.__main_container.set_layout(self.__layout_container)
 
+        # Header
+        self.__header_layout = QtWidgets.QHBoxLayout()
+        self.__header_layout.set_contents_margins(80, 0, 10, 0)
+        self.__header_layout.set_spacing(10)
+        self.__header_layout.set_alignment(QtCore.Qt.AlignTop)
+        self.__layout_container.add_layout(self.__header_layout)
+
         # Search input
         self.__search_input = widgets.SearchApps()
         self.__search_input.set_contents_margins(200, 0, 200, 0)
@@ -55,7 +62,38 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__search_input.set_alignment(QtCore.Qt.AlignHCenter)
         self.__search_input.text_changed_signal().connect(
             self.__on_search_input)
-        self.__layout_container.add_widget(self.__search_input)
+        self.__header_layout.add_widget(self.__search_input)
+
+        # Fullscreen
+        self.__full_screen_button = widgets.ActionButton(
+            icon_name='view-restore', text='Exit full screen')
+        self.__full_screen_button.set_contents_margins(0, 0, 0, 0)
+        self.__full_screen_button.clicked_signal().connect(
+            lambda widget: self.__on_full_screen_button(widget)
+        )
+        self.__full_screen_button.enter_event_signal().connect(
+            lambda widget: self.__on_action_button_enter_event(widget)
+        )
+        self.__full_screen_button.leave_event_signal().connect(
+            lambda _: self.__on_action_button_leave_event()
+        )
+        self.__header_layout.add_widget(self.__full_screen_button)
+
+        # Close
+        self.__close_window_button = widgets.ActionButton(
+            icon_name='edit-delete-remove', text='Close this menu')
+        self.__close_window_button.set_contents_margins(0, 0, 0, 0)
+        self.__close_window_button.clicked_signal().connect(
+            lambda _: self.close()
+        )
+        self.__close_window_button.enter_event_signal().connect(
+            lambda widget: self.__on_action_button_enter_event(widget)
+        )
+        self.__close_window_button.leave_event_signal().connect(
+            lambda _: self.__on_action_button_leave_event()
+        )
+        self.__header_layout.add_widget(self.__full_screen_button)
+        self.__header_layout.add_widget(self.__close_window_button)
 
         # Body layout
         self.__body_layout = QtWidgets.QHBoxLayout()
@@ -442,6 +480,26 @@ class MainWindow(QtWidgets.QMainWindow):
             item.widget().set_enabled(enabled_status)
             item.widget().set_enter_event_enabled(enabled_status)
 
+    def __on_full_screen_button(self, widget: widgets.ActionButton) -> None:
+        # Fullscreen
+        if widget.icon_name() == 'view-fullscreen':
+            widget.set_icon_name('view-restore')
+            widget.set_text('Exit full screen')
+            self.show_full_screen()
+        else:
+            widget.set_icon_name('view-fullscreen')
+            widget.set_text('Enter full screen')
+            self.show_maximized()
+
+    def __on_action_button_enter_event(
+            self, widget: widgets.ActionButton) -> None:
+        # Add status bar information about this button
+        self.__status_bar.set_text(widget.text())
+
+    def __on_action_button_leave_event(self) -> None:
+        # Clear status bar
+        self.__status_bar.set_text(' ')
+
     def __close_active_context_menus(self):
         # Close context menus
         if self.__active_context_menu_app_launcher:
@@ -492,7 +550,7 @@ class MainWindow(QtWidgets.QMainWindow):
             # Exec
             exe = widget.desktop_file().content['[Desktop Entry]']['Exec']
             exec_command = exe.split(' %', 1)[0] if ' %' in exe else exe
-            subprocess.Popen(exec_command.strip().split())
+            subprocess.Popen(exec_command.strip().strip('"').strip().split())
             print(widget)
 
         # Ghost AppLauncher
@@ -795,8 +853,10 @@ class Application(object):
         :param args: List of command line arguments
         """
         self.__application = QtWidgets.QApplication(args)
-        self.__application_icon = 'tuxmenu.png'
-        self.__application_name = 'TuxMenu'
+        self.__application_name = 'Menu'
+        self.__application_icon = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            'static', 'grid.svg')
         self.__application_window = MainWindow()
 
     def main(self) -> None:
@@ -812,8 +872,8 @@ class Application(object):
         self.__application_window.set_window_icon(app_icon)
 
         # Size
-        self.__application_window.set_minimum_height(500)
-        self.__application_window.set_minimum_width(500)
+        self.__application_window.set_minimum_height(650)
+        self.__application_window.set_minimum_width(1100)
 
         # Blur
         self.__application_window.set_attribute(
