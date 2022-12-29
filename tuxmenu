@@ -1,3 +1,2 @@
 #!/bin/bash
-. /usr/share/tuxmenu/venv/bin/activate
-python /usr/share/tuxmenu/src/main.py
+/usr/share/tuxmenu/src/main.dist/main
