@@ -23,6 +23,7 @@ class MainWindow(QtWidgets.QMainWindow):
     __mount_pin_apps_signal = QtCore.Signal(object)
     __mount_apps_signal = QtCore.Signal(object)
     __mount_energy_buttons_signal = QtCore.Signal(object)
+    __app_launcher_focus_signal = QtCore.Signal(object)
 
     def __init__(self, *args, **kwargs) -> None:
         """Class constructor
@@ -33,6 +34,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__set_style()
 
         self.__menu_schema = None
+        self.__status_bar_default_text = None
         self.__energy_buttons_schema = None
         self.__active_context_menu_app_launcher = None
 
@@ -50,33 +52,44 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Header
         self.__header_layout = QtWidgets.QHBoxLayout()
-        self.__header_layout.set_contents_margins(80, 0, 10, 0)
-        self.__header_layout.set_spacing(10)
+        self.__header_layout.set_contents_margins(10, 0, 10, 0)
+        self.__header_layout.set_spacing(5)
         self.__header_layout.set_alignment(QtCore.Qt.AlignTop)
         self.__layout_container.add_layout(self.__header_layout)
 
+        # Settings
+        self.__settings_button = widgets.ActionButton(
+            icon_name='configure', text='Menu settings')
+        self.__settings_button.set_contents_margins(0, 0, 0, 0)
+        # self.__settings_button.clicked_signal().connect(
+        #     lambda widget: self.__on_full_screen_button(widget))
+        self.__settings_button.enter_event_signal().connect(
+            lambda widget: self.__on_action_button_enter_event(widget))
+        self.__settings_button.leave_event_signal().connect(
+            lambda _: self.__on_action_button_leave_event())
+        self.__header_layout.add_widget(self.__settings_button)
+
         # Search input
         self.__search_input = widgets.SearchApps()
-        self.__search_input.set_contents_margins(200, 0, 200, 0)
         self.__search_input.set_placeholder_text('Type to search')
         self.__search_input.set_alignment(QtCore.Qt.AlignHCenter)
         self.__search_input.text_changed_signal().connect(
             self.__on_search_input)
         self.__header_layout.add_widget(self.__search_input)
 
+        self.__app_launcher_focus_signal.connect(
+            lambda sender_id: self.__apps_launcher_focus(sender_id))
+
         # Fullscreen
         self.__full_screen_button = widgets.ActionButton(
             icon_name='view-restore', text='Exit full screen')
         self.__full_screen_button.set_contents_margins(0, 0, 0, 0)
         self.__full_screen_button.clicked_signal().connect(
-            lambda widget: self.__on_full_screen_button(widget)
-        )
+            lambda widget: self.__on_full_screen_button(widget))
         self.__full_screen_button.enter_event_signal().connect(
-            lambda widget: self.__on_action_button_enter_event(widget)
-        )
+            lambda widget: self.__on_action_button_enter_event(widget))
         self.__full_screen_button.leave_event_signal().connect(
-            lambda _: self.__on_action_button_leave_event()
-        )
+            lambda _: self.__on_action_button_leave_event())
         self.__header_layout.add_widget(self.__full_screen_button)
 
         # Close
@@ -84,16 +97,12 @@ class MainWindow(QtWidgets.QMainWindow):
             icon_name='edit-delete-remove', text='Close this menu')
         self.__close_window_button.set_contents_margins(0, 0, 0, 0)
         self.__close_window_button.clicked_signal().connect(
-            lambda _: self.close()
-        )
+            lambda _: self.close())
         self.__close_window_button.enter_event_signal().connect(
-            lambda widget: self.__on_action_button_enter_event(widget)
-        )
+            lambda widget: self.__on_action_button_enter_event(widget))
         self.__close_window_button.leave_event_signal().connect(
-            lambda _: self.__on_action_button_leave_event()
-        )
-        self.__header_layout.add_widget(self.__full_screen_button)
-        self.__header_layout.add_widget(self.__close_window_button)
+            lambda _: self.__on_action_button_leave_event())
+        # self.__header_layout.add_widget(self.__close_window_button)
 
         # Body layout
         self.__body_layout = QtWidgets.QHBoxLayout()
@@ -113,11 +122,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__mount_category_buttons_signal.connect(
             self.__mount_category_buttons)
 
-        self.__category_buttons_thread = threading.Thread(
-            target=self.__mount_category_buttons_thread)
-        self.__category_buttons_thread.start()
+        category_buttons_thread = threading.Thread(
+            target=self.__mount_category_buttons_bg)
+        category_buttons_thread.start()
 
         # Apps layout
+        self.__stack_grids = {}
         self.__app_grid_stacked_layout = QtWidgets.QStackedLayout()
         self.__app_grid_stacked_layout.set_contents_margins(0, 0, 0, 0)
         self.__app_grid_stacked_layout.set_spacing(0)
@@ -143,45 +153,54 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Home page: Recent
         self.__recent_apps = attachments.SavedApps(config_name='recent-apps')
+
         self.__mount_recent_apps_signal.connect(self.__mount_recent_apps)
-        self.__recent_apps_thread = threading.Thread(
-            target=self.__mount_recent_apps_thread)
+
+        self.__mount_recent_apps_thread = threading.Thread(
+            target=self.__mount_recent_apps_bg)
 
         # Home page: Pin's
         self.__pin_update_index = 0
         self.__pin_apps = attachments.SavedApps(config_name='pin-apps')
+
         self.__mount_pin_apps_signal.connect(self.__mount_pin_apps)
-        self.__pin_apps_thread = threading.Thread(  # start() on 'recent'
-            target=self.__mount_pin_apps_thread)    # thread
+
+        self.__mount_pin_apps_thread = threading.Thread(  # start() on 'recent'
+            target=self.__mount_pin_apps_bg)
 
         # App pages
         self.__app_pages_have_been_created = False
+
         self.__mount_apps_signal.connect(self.__mount_apps)
-        self.__apps_thread = threading.Thread(  # start() on category button
-            target=self.__mount_apps_thread)
+
+        self.__mount_apps_thread = threading.Thread(  # start() on category btn
+            target=self.__mount_apps_bg)
 
         # Energy buttons layout
         self.__energy_buttons_pages_have_been_created = False
         self.__energy_buttons_layout = QtWidgets.QVBoxLayout()
-        self.__energy_buttons_layout.set_contents_margins(10, 0, 10, 0)
-        self.__energy_buttons_layout.set_spacing(10)
+        self.__energy_buttons_layout.set_contents_margins(20, 0, 20, 0)
+        self.__energy_buttons_layout.set_spacing(5)
         self.__energy_buttons_layout.set_alignment(QtCore.Qt.AlignCenter)
         self.__body_layout.add_layout(self.__energy_buttons_layout)
 
         self.__mount_energy_buttons_signal.connect(self.__mount_energy_buttons)
 
         self.__energy_buttons_thread = threading.Thread(  # start() on
-            target=self.__mount_energy_buttons_thread)    # 'pin' thread
+            target=self.__mount_energy_buttons_bg)    # 'pin' thread
 
         # Status bar
-        self.__status_bar_temp_text = ' '
+        self.__status_bar_temp_text = None
         self.__status_bar = QtWidgets.QLabel(self.__status_bar_temp_text)
         self.__status_bar.set_word_wrap(True)
         self.__status_bar.set_fixed_height(50)
-        self.__status_bar.set_contents_margins(250, 10, 250, 5)
-        self.__status_bar.set_alignment(QtCore.Qt.AlignTop)
+        self.__status_bar.set_alignment(
+            QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
         self.__status_bar.set_style_sheet(
-            'background: transparent; font-size: 13px;')
+            'background-color: rgba(0, 0, 0, 0.1);'
+            'font-size: 13px;'
+            'border-top: 1px solid rgba(255, 255, 255, 0.03);'
+            'padding-left: 10px;')
         self.__layout_container.add_widget(self.__status_bar)
         self.set_focus()
         self.install_event_filter(self)
@@ -194,7 +213,7 @@ class MainWindow(QtWidgets.QMainWindow):
             _style = f.read()
             self.set_style_sheet(_style)
 
-    def __mount_category_buttons_thread(self) -> None:
+    def __mount_category_buttons_bg(self) -> None:
         # Wait for pin apps to render and mount category buttons
         time.sleep(0.05)
         self.__mount_category_buttons_signal.emit(0)
@@ -207,6 +226,11 @@ class MainWindow(QtWidgets.QMainWindow):
         menu_schema = {"Home": [0]}
         menu_schema.update(self.__menu_schema.schema)
 
+        # Update number_of_apps
+        self.__status_bar_default_text = str(
+            len(self.__menu_schema.schema['All'])) + " app's"
+        self.__status_bar.set_text(self.__status_bar_default_text)
+
         # Buttons
         page_index = 1
         for categ, apps in menu_schema.items():
@@ -216,13 +240,19 @@ class MainWindow(QtWidgets.QMainWindow):
                 text=categ, icon_name=self.__menu_schema.icons_schema[categ])
             setattr(category_button, 'page_index', page_index)
             setattr(category_button, 'category', categ)
+            category_button.set_contents_margins(0, 0, 10, 0)
             category_button.clicked_signal().connect(self.__on_category_button)
             self.__category_buttons_layout.add_widget(category_button)
             page_index += 1
 
-        self.__recent_apps_thread.start()
+        # First item focus (Category button: Home)
+        first_button = self.__category_buttons_layout.item_at(0).widget()
+        first_button.set_check_state(state=True)
+        self.__active_category_button = first_button
 
-    def __mount_recent_apps_thread(self) -> None:
+        self.__mount_recent_apps_thread.start()
+
+    def __mount_recent_apps_bg(self) -> None:
         # Wait for window to render and mount recent app launchers
         time.sleep(0.05)
         self.__mount_recent_apps_signal.emit(0)
@@ -237,9 +267,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Pin apps
         self.__app_grid_stacked_layout.set_current_index(1)
-        self.__pin_apps_thread.start()
+        self.__mount_pin_apps_thread.start()
 
-    def __mount_pin_apps_thread(self) -> None:
+    def __mount_pin_apps_bg(self) -> None:
         # Wait for recent apps to render and mount pin app launchers
         time.sleep(0.05)
         self.__mount_pin_apps_signal.emit(0)
@@ -257,7 +287,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.__energy_buttons_thread.start()
             self.__energy_buttons_pages_have_been_created = True
 
-    def __mount_energy_buttons_thread(self) -> None:
+    def __mount_energy_buttons_bg(self) -> None:
         # Wait for category buttons to render and mount energy buttons
         time.sleep(0.05)
         self.__mount_energy_buttons_signal.emit(0)
@@ -279,7 +309,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 lambda _: self.__on_energy_buttons_leave_event())
             self.__energy_buttons_layout.add_widget(energy_button)
 
-    def __mount_apps_thread(self) -> None:
+    def __mount_apps_bg(self) -> None:
         # Wait for render and mount app launchers
         time.sleep(0.01)
         self.__mount_apps_signal.emit(0)
@@ -289,7 +319,9 @@ class MainWindow(QtWidgets.QMainWindow):
         for categ, apps in self.__menu_schema.schema.items():
             if not apps or categ == 'All':
                 continue
-            self.__mount_app_grid(desktop_file_list=apps)
+
+            grid = self.__mount_app_grid(desktop_file_list=apps)
+            self.__stack_grids[categ] = grid
         self.__active_category_button.clicked_signal().emit(0)
 
     def __mount_app_grid(
@@ -298,7 +330,7 @@ class MainWindow(QtWidgets.QMainWindow):
             is_home_page: bool = False,
             home_page_type: str = 'pin',
             title: str = None,
-            ) -> None:
+            ) -> widgets.AppGrid:
 
         if is_home_page:
             page_layout = self.__home_page_layout
@@ -345,6 +377,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         app_grid.set_alignment(QtCore.Qt.AlignTop)
         page_layout.add_widget(app_grid, page_layout_stretch)
+        return app_grid
 
     def __on_search_input(self, text: str) -> None:
         # Triggered when text is entered into the search box
@@ -354,13 +387,28 @@ class MainWindow(QtWidgets.QMainWindow):
 
             desktop_file_list = self.__searched_apps(text=text)
             if desktop_file_list:
-                self.__mount_searched_apps_grid(
+                grid = self.__mount_searched_apps_grid(
                     desktop_file_list=desktop_file_list)
+                self.__stack_grids['search'] = grid
+
+                app_launcher_focus_thread = threading.Thread(
+                    target=self.__app_launcher_focus_bg, args=['search'])
+                app_launcher_focus_thread.start()
             else:
                 self.__mount_empty_searched_apps_grid()
 
         else:  # Restore default menu layout
             self.__show_searched_apps_page(show=False)
+
+    def __app_launcher_focus_bg(self, sender_id: str) -> None:
+        time.sleep(0.5)
+        self.__app_launcher_focus_signal.emit(sender_id)
+
+    def __apps_launcher_focus(self, sender_id: str) -> None:
+        for _ in range(10000):
+            if self.__stack_grids[sender_id].widgets_list():
+                self.__stack_grids[sender_id].widgets_list()[0].set_focus()
+                break
 
     def __searched_apps(self, text: str) -> list:
         # Searched app list [DesktopFile, DesktopFile]
@@ -408,7 +456,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         return desktop_files
 
-    def __mount_searched_apps_grid(self, desktop_file_list: list) -> None:
+    def __mount_searched_apps_grid(
+            self, desktop_file_list: list) -> widgets.AppGrid:
         # Searched app grid
 
         # Total apps per search
@@ -440,6 +489,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # Insert new apps page
         self.__app_grid_stacked_layout.insert_widget(0, app_grid)
         self.__app_grid_stacked_layout.set_current_index(0)
+
+        return app_grid
 
     def __mount_empty_searched_apps_grid(self) -> None:
         # Clear old apps page
@@ -498,7 +549,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __on_action_button_leave_event(self) -> None:
         # Clear status bar
-        self.__status_bar.set_text(' ')
+        self.__status_bar.set_text(self.__status_bar_default_text)
 
     def __close_active_context_menus(self):
         # Close context menus
@@ -518,7 +569,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Create apps page for all categories
         if not self.__app_pages_have_been_created:
-            self.__apps_thread.start()
+            self.__mount_apps_thread.start()
             self.__app_pages_have_been_created = True
 
         # Show page
@@ -771,7 +822,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __on_app_launcher_leave_event(self) -> None:
         # Clear status bar
-        self.__status_bar.set_text(' ')
+        self.__status_bar.set_text(self.__status_bar_default_text)
 
     def __on_energy_buttons(self, widget: widgets.EnergyButton) -> None:
         # When one energy button is clicked
@@ -796,7 +847,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __on_energy_buttons_leave_event(self) -> None:
         # Clear status bar
-        self.__status_bar.set_text(' ')
+        self.__status_bar.set_text(self.__status_bar_default_text)
 
     def event_filter(
             self, widget: QtWidgets.QMainWindow, event: QtCore.QEvent) -> None:
@@ -816,12 +867,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 # text = ''  # Fix espace
 
             elif key == QtCore.Qt.Key_Return or key == QtCore.Qt.Key_Enter:
-                print('<QtCore.Qt.Key_Enter>')
-                # focus_widget = QtWidgets.QApplication.focus_widget()
-                # if isinstance(focus_widget, widgets.AppLauncher):
-                #     print(focus_widget)
-                #     print('<QtWidgets.QMainWindow: close>')
-                #     self.close()
+                focus_widget = QtWidgets.QApplication.focus_widget()
+                if isinstance(focus_widget, widgets.AppLauncher):
+                    self.__on_app_launcher(widget=focus_widget)
 
             elif key == QtCore.Qt.Key_Backspace:
                 self.__search_input.set_text(self.__search_input.text()[:-1])
