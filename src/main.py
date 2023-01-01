@@ -21,7 +21,6 @@ class MainWindow(QtWidgets.QMainWindow):
     __mount_category_buttons_signal = QtCore.Signal(object)
     __mount_recent_apps_signal = QtCore.Signal(object)
     __mount_pin_apps_signal = QtCore.Signal(object)
-    __mount_apps_signal = QtCore.Signal(object)
     __mount_energy_buttons_signal = QtCore.Signal(object)
     __app_launcher_focus_signal = QtCore.Signal(object)
 
@@ -169,12 +168,7 @@ class MainWindow(QtWidgets.QMainWindow):
             target=self.__mount_pin_apps_bg)
 
         # App pages
-        self.__app_pages_have_been_created = False
-
-        self.__mount_apps_signal.connect(self.__mount_apps)
-
-        self.__mount_apps_thread = threading.Thread(  # start() on category btn
-            target=self.__mount_apps_bg)
+        self.__app_page_created = []
 
         # Energy buttons layout
         self.__energy_buttons_pages_have_been_created = False
@@ -207,11 +201,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __set_style(self) -> None:
         # Adds CSS styling to the main window
+
         style_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), 'static/style.qss')
-        with open(style_path, 'r') as f:
-            _style = f.read()
-            self.set_style_sheet(_style)
+
+        with open(style_path, 'r') as style_qss_file:
+            style_qss = style_qss_file.read()
+            self.set_style_sheet(style_qss)
 
     def __mount_category_buttons_bg(self) -> None:
         # Wait for pin apps to render and mount category buttons
@@ -223,8 +219,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Menu schema
         self.__menu_schema = attachments.MenuSchema()
-        menu_schema = {"Home": [0]}
-        menu_schema.update(self.__menu_schema.schema)
+        menu_schema = self.__menu_schema.schema
 
         # Update number_of_apps
         self.__status_bar_default_text = str(
@@ -234,7 +229,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Buttons
         page_index = 1
         for categ, apps in menu_schema.items():
-            if not apps or categ == 'All':
+            if not apps and categ != 'Home' or categ == 'All':
                 continue
             category_button = widgets.CategoryButton(
                 text=categ, icon_name=self.__menu_schema.icons_schema[categ])
@@ -243,6 +238,8 @@ class MainWindow(QtWidgets.QMainWindow):
             category_button.set_contents_margins(0, 0, 10, 0)
             category_button.clicked_signal().connect(self.__on_category_button)
             self.__category_buttons_layout.add_widget(category_button)
+
+            self.__app_grid_stacked_layout.add_widget(QtWidgets.QWidget())
             page_index += 1
 
         # First item focus (Category button: Home)
@@ -259,9 +256,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __mount_recent_apps(self) -> None:
         # Mount recent app launchers
-        self.__mount_app_grid(
+        self.__mount_home_page_apps(
             desktop_file_list=self.__recent_apps.apps,
-            is_home_page=True,
             home_page_type='recent',
             title='Recents')
 
@@ -277,15 +273,55 @@ class MainWindow(QtWidgets.QMainWindow):
     def __mount_pin_apps(self) -> None:
         # Mount pin app launchers
 
-        self.__mount_app_grid(
+        self.__mount_home_page_apps(
             desktop_file_list=self.__pin_apps.apps,
-            is_home_page=True,
+            home_page_type='pin',
             title="Pin's")
 
         # Category buttons
         if not self.__energy_buttons_pages_have_been_created:
             self.__energy_buttons_thread.start()
             self.__energy_buttons_pages_have_been_created = True
+
+        self.__app_page_created.append('Home')
+
+    def __mount_home_page_apps(
+            self,
+            desktop_file_list: list,
+            home_page_type: str = 'pin',
+            title: str = None,
+            ) -> widgets.AppGrid:
+
+        page_layout = self.__home_page_layout
+        empty_lines = 1 if home_page_type == 'pin' else 2
+        page_layout_stretch = 6 if home_page_type == 'pin' else 4
+
+        title_label = QtWidgets.QLabel(title)
+        title_label.set_contents_margins(10, 10, 0, 10)
+        title_label.set_alignment(QtCore.Qt.AlignLeft)
+        title_label.set_style_sheet(
+            'background: transparent; font-size: 20px;')
+        page_layout.add_widget(title_label)
+
+        # App grid
+        app_grid = widgets.AppGrid(
+            desktop_file_list=desktop_file_list,
+            pin_desktop_file_list=self.__pin_apps.apps,
+            columns_num=self.__app_grid_columns,
+            empty_lines=empty_lines)
+
+        app_grid.clicked_signal().connect(
+            lambda widget: self.__on_app_launcher(widget))
+        app_grid.right_clicked_signal().connect(
+            lambda widget: self.__on_app_launcher_right_click(widget))
+        app_grid.enter_event_signal().connect(
+            lambda widget: self.__on_app_launcher_enter_event(widget))
+        app_grid.leave_event_signal().connect(
+            lambda _: self.__on_app_launcher_leave_event())
+
+        app_grid.set_alignment(QtCore.Qt.AlignTop)
+        page_layout.add_widget(app_grid, page_layout_stretch)
+        return app_grid
 
     def __mount_energy_buttons_bg(self) -> None:
         # Wait for category buttons to render and mount energy buttons
@@ -309,62 +345,25 @@ class MainWindow(QtWidgets.QMainWindow):
                 lambda _: self.__on_energy_buttons_leave_event())
             self.__energy_buttons_layout.add_widget(energy_button)
 
-    def __mount_apps_bg(self) -> None:
-        # Wait for render and mount app launchers
-        time.sleep(0.01)
-        self.__mount_apps_signal.emit(0)
+    def __mount_app_category_pages(
+            self, desktop_file_list: list, index: int) -> widgets.AppGrid:
+        page = QtWidgets.QWidget()
+        page.set_contents_margins(0, 0, 0, 0)
+        page.set_style_sheet('background: transparent;')
+        # self.__app_grid_stacked_layout.add_widget(page)
+        self.__app_grid_stacked_layout.insert_widget(index, page)
 
-    def __mount_apps(self) -> None:
-        # Mount app launchers
-        for categ, apps in self.__menu_schema.schema.items():
-            if not apps or categ == 'All':
-                continue
-
-            grid = self.__mount_app_grid(desktop_file_list=apps)
-            self.__stack_grids[categ] = grid
-        self.__active_category_button.clicked_signal().emit(0)
-
-    def __mount_app_grid(
-            self,
-            desktop_file_list: list,
-            is_home_page: bool = False,
-            home_page_type: str = 'pin',
-            title: str = None,
-            ) -> widgets.AppGrid:
-
-        if is_home_page:
-            page_layout = self.__home_page_layout
-            empty_lines = 1 if home_page_type == 'pin' else 2
-            page_layout_stretch = 6 if home_page_type == 'pin' else 4
-
-        else:
-            page = QtWidgets.QWidget()
-            empty_lines = None
-            page_layout_stretch = -1
-
-            page.set_contents_margins(0, 0, 0, 0)
-            page.set_style_sheet('background: transparent;')
-            self.__app_grid_stacked_layout.add_widget(page)
-
-            page_layout = QtWidgets.QVBoxLayout()
-            page_layout.set_contents_margins(0, 0, 0, 0)
-            page_layout.set_spacing(0)
-            page.set_layout(page_layout)
-
-        if title:
-            title_label = QtWidgets.QLabel(title)
-            title_label.set_contents_margins(10, 10, 0, 10)
-            title_label.set_alignment(QtCore.Qt.AlignLeft)
-            title_label.set_style_sheet(
-                'background: transparent; font-size: 20px;')
-            page_layout.add_widget(title_label)
+        page_layout = QtWidgets.QVBoxLayout()
+        page_layout.set_contents_margins(0, 0, 0, 0)
+        page_layout.set_spacing(0)
+        page.set_layout(page_layout)
 
         # App grid
         app_grid = widgets.AppGrid(
             desktop_file_list=desktop_file_list,
             pin_desktop_file_list=self.__pin_apps.apps,
             columns_num=self.__app_grid_columns,
-            empty_lines=empty_lines)
+            empty_lines=0)
 
         app_grid.clicked_signal().connect(
             lambda widget: self.__on_app_launcher(widget))
@@ -376,7 +375,7 @@ class MainWindow(QtWidgets.QMainWindow):
             lambda _: self.__on_app_launcher_leave_event())
 
         app_grid.set_alignment(QtCore.Qt.AlignTop)
-        page_layout.add_widget(app_grid, page_layout_stretch)
+        page_layout.add_widget(app_grid, -1)
         return app_grid
 
     def __on_search_input(self, text: str) -> None:
@@ -401,14 +400,12 @@ class MainWindow(QtWidgets.QMainWindow):
             self.__show_searched_apps_page(show=False)
 
     def __app_launcher_focus_bg(self, sender_id: str) -> None:
-        time.sleep(0.5)
+        time.sleep(0.7)
         self.__app_launcher_focus_signal.emit(sender_id)
 
     def __apps_launcher_focus(self, sender_id: str) -> None:
-        for _ in range(10000):
-            if self.__stack_grids[sender_id].widgets_list():
-                self.__stack_grids[sender_id].widgets_list()[0].set_focus()
-                break
+        if self.__stack_grids[sender_id].widgets_list():
+            self.__stack_grids[sender_id].widgets_list()[0].set_focus()
 
     def __searched_apps(self, text: str) -> list:
         # Searched app list [DesktopFile, DesktopFile]
@@ -567,14 +564,28 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__active_category_button = self.sender()
         self.__active_category_button.set_check_state(state=True)
 
-        # Create apps page for all categories
-        if not self.__app_pages_have_been_created:
-            self.__mount_apps_thread.start()
-            self.__app_pages_have_been_created = True
+        category = self.__active_category_button.category
+        index = self.__active_category_button.page_index
+        if category not in self.__app_page_created:
+            # Clear old apps page
+            self.__app_grid_stacked_layout.set_current_index(index)
+            self.__app_grid_stacked_layout.remove_widget(
+                self.__app_grid_stacked_layout.current_widget())
+
+            # Creat new apps page
+            grid = self.__mount_app_category_pages(
+                desktop_file_list=self.__menu_schema.schema[category],
+                index=index)
+
+            # Update grid list
+            self.__stack_grids[category] = grid
+            # Update page list
+            self.__app_page_created.append(category)
+
+            self.__active_category_button.clicked_signal().emit(0)
 
         # Show page
-        self.__app_grid_stacked_layout.set_current_index(
-            self.__active_category_button.page_index)
+        self.__app_grid_stacked_layout.set_current_index(index)
 
     def __on_app_launcher(
             self,

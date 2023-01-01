@@ -2,5 +2,5 @@
 Type=Application
 Name=TuxMenu
 Categories=Utility;
-Exec=/usr/share/tuxmenu/tuxmenu
+Exec=/usr/share/tuxmenu/main
 Icon=show-grid
