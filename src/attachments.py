@@ -247,7 +247,7 @@ class MenuSchema(object):
         # https://specifications.freedesktop.org/
         # menu-spec/menu-spec-1.0.html#category-registry
         self.__schema = {
-            'All': [], 'Development': [], 'Education': [],
+            'Home': [], 'All': [], 'Development': [], 'Education': [],
             'Multimedia': [], 'AudioVideo': [], 'Audio': [], 'Video': [],
             'Game': [], 'Graphics': [], 'Network': [], 'Office': [],
             'Settings': [], 'System': [], 'Utility': [], 'Others': []}
