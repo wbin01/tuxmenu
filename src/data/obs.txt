@@ -3,4 +3,4 @@
     python -m pip install BlurWindow
     python -m pip install pyxdg
 
-Window icon when build
+https://unix.stackexchange.com/questions/291922/universal-way-to-logout-from-terminal-via-dbus

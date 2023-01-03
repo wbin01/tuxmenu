@@ -201,7 +201,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __set_style(self) -> None:
         # Adds CSS styling to the main window
-
         style_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), 'static/style.qss')
 
@@ -211,7 +210,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __mount_category_buttons_bg(self) -> None:
         # Wait for pin apps to render and mount category buttons
-        time.sleep(0.05)
+        time.sleep(0.15)
         self.__mount_category_buttons_signal.emit(0)
 
     def __mount_category_buttons(self) -> None:
@@ -251,7 +250,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __mount_recent_apps_bg(self) -> None:
         # Wait for window to render and mount recent app launchers
-        time.sleep(0.05)
+        time.sleep(0.03)
         self.__mount_recent_apps_signal.emit(0)
 
     def __mount_recent_apps(self) -> None:
@@ -267,7 +266,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __mount_pin_apps_bg(self) -> None:
         # Wait for recent apps to render and mount pin app launchers
-        time.sleep(0.05)
+        time.sleep(0.03)
         self.__mount_pin_apps_signal.emit(0)
 
     def __mount_pin_apps(self) -> None:
@@ -325,7 +324,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __mount_energy_buttons_bg(self) -> None:
         # Wait for category buttons to render and mount energy buttons
-        time.sleep(0.05)
+        time.sleep(0.03)
         self.__mount_energy_buttons_signal.emit(0)
 
     def __mount_energy_buttons(self) -> None:
