@@ -357,7 +357,7 @@ class EnergyButtonsSchema(object):
         self.__schema = {
             'lock-screen': {
                 'text': 'Lock screen',
-                'icon-name': 'system-lock-screen',
+                'icon-name': 'system-lock-screen',  # loginctl unlock-session
                 'command': ['loginctl', 'lock-session']},
             'suspend': {
                 'text': 'Suspend',
