@@ -1,6 +1,0 @@
---- Packages
-    python -m pip install pyside6
-    python -m pip install BlurWindow
-    python -m pip install pyxdg
-
-https://unix.stackexchange.com/questions/291922/universal-way-to-logout-from-terminal-via-dbus

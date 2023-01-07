@@ -133,7 +133,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__app_grid_stacked_layout.set_alignment(QtCore.Qt.AlignTop)
         self.__body_layout.add_layout(self.__app_grid_stacked_layout)
 
-        # Searched apps page (temp 0 index)
+        # Searched apps page (hide on index 0)
         self.__app_grid_stacked_layout.add_widget(QtWidgets.QWidget())
 
         # Home page: Recents and Pin's
@@ -189,12 +189,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__status_bar.set_word_wrap(True)
         self.__status_bar.set_fixed_height(50)
         self.__status_bar.set_alignment(
-            QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
+            QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
         self.__status_bar.set_style_sheet(
             'background-color: rgba(0, 0, 0, 0.1);'
             'font-size: 13px;'
             'border-top: 1px solid rgba(255, 255, 255, 0.03);'
-            'padding-left: 10px;')
+            'padding: 0px 10px 0px 10px;')
         self.__layout_container.add_widget(self.__status_bar)
         self.set_focus()
         self.install_event_filter(self)
@@ -226,7 +226,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.__status_bar.set_text(self.__status_bar_default_text)
 
         # Buttons
-        page_index = 1
+        page_index = 1  # Searched apps page (hide on index 0)
         for categ, apps in menu_schema.items():
             if not apps and categ != 'Home' or categ == 'All':
                 continue
@@ -581,10 +581,24 @@ class MainWindow(QtWidgets.QMainWindow):
             # Update page list
             self.__app_page_created.append(category)
 
+            # Click
             self.__active_category_button.clicked_signal().emit(0)
 
         # Show page
         self.__app_grid_stacked_layout.set_current_index(index)
+
+        # Update status bar
+        if category == 'Home':
+            n_apps = len(self.__menu_schema.schema['All'])
+            self.__status_bar_default_text = f"{n_apps} app's"
+        else:
+            n_apps = len(self.__menu_schema.schema[category])
+            if n_apps == 1:
+                self.__status_bar_default_text = f'{category}: 1 app'
+            else:
+                self.__status_bar_default_text = f"{category}: {n_apps} app's"
+
+        self.__status_bar.set_text(self.__status_bar_default_text)
 
     def __on_app_launcher(
             self,
