@@ -77,7 +77,7 @@ class DesktopFileLocations(object):
         xdg_data_dirs = getoutput('echo $XDG_DATA_DIRS')
         if xdg_data_dirs:
             for data_dir in xdg_data_dirs.split(':'):
-                if 'applications' in os.listdir(data_dir):
+                if os.path.isdir(data_dir) and 'applications' in os.listdir(data_dir):
                     desktop_file_dirs.append(
                         os.path.join(data_dir, 'applications'))
         else:

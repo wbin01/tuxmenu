@@ -951,7 +951,7 @@ class Application(object):
         # Blur
         self.__application_window.set_attribute(
             QtCore.Qt.WA_TranslucentBackground)
-        GlobalBlur(self.__application_window.win_id(), Dark=True, QWidget=self)
+        # GlobalBlur(self.__application_window.win_id(), Dark=True, QWidget=self)
 
         # Show | show_maximized show_full_screen show
         self.__application_window.show_full_screen()
