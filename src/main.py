@@ -634,15 +634,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Ghost AppLauncher
         elif isinstance(widget, widgets.GhostAppLauncher):
-            print(widget)
+            pass
 
         # Context menu button
         elif isinstance(widget, widgets.AppLauncherContextMenuButton):
             self.__on_app_launcher_context_menu_buttons(widget=widget)
-            print(widget)
             return
 
-        print('<QtWidgets.QMainWindow: close>')
         self.close()
 
     def __on_app_launcher_context_menu_buttons(
@@ -785,8 +783,6 @@ class MainWindow(QtWidgets.QMainWindow):
                     # ... else show the 'pin' button
                     self.__active_context_menu_app_launcher.toggle_pin_button()
 
-        print(widget, '<QtCore.Qt.RightButton>')
-
     def __on_app_launcher_context_menu_enter_event(
             self, widget: widgets.AppLauncherContextMenuButton) -> None:
         # Add status bar context menu info
@@ -862,10 +858,8 @@ class MainWindow(QtWidgets.QMainWindow):
                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                     _stdout, _stderr = command.communicate()
 
-                print(widget)
                 break
 
-        print('<QtWidgets.QMainWindow: close>')
         self.close()
 
     def __on_energy_buttons_enter_event(
@@ -916,7 +910,6 @@ class MainWindow(QtWidgets.QMainWindow):
         :param event: QEvent that captures keyboard keys
         """
         if event.button() == QtCore.Qt.LeftButton:
-            print('<QtWidgets.QMainWindow: close>')
             self.close()
 
 

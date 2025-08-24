@@ -117,7 +117,6 @@ class DesktopFileLocations(object):
         return desktop_files
 
     def __str__(self) -> str:
-        # String for print() fn
         return f'<DesktopFileLocations: {id(self)}>'
 
 
@@ -343,7 +342,6 @@ class MenuSchema(object):
                             self.__schema[categ].append(desktop_file)
 
     def __str__(self) -> str:
-        # String for print() fn
         return f'<MenuSchema: {id(self)}>'
 
 
@@ -462,5 +460,4 @@ class SavedApps(object):
             json.dump({self.__config_name: url_list_apps}, f)
 
     def __str__(self) -> str:
-        # String for print() fn
         return f'<SavedApps: {self.__config_name}>'

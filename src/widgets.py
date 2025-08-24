@@ -287,7 +287,6 @@ class AppLauncherContextMenu(QtWidgets.QWidget):
         self.__enter_event_signal.emit(widget)
 
     def __str__(self) -> str:
-        # String for print() fn
         name = self.__desktop_file.content['[Desktop Entry]']['Name']
         return f'<AppLauncherContextMenu: {name}>'
 
@@ -620,7 +619,6 @@ class AppLauncher(QtWidgets.QWidget):
         self.__clicked_signal.emit(widget)
 
     def __str__(self) -> str:
-        # String for print() fn
         return ('<AppLauncher: '
                 f'{self.__desktop_file.content["[Desktop Entry]"]["Name"]}>')
 
@@ -687,7 +685,6 @@ class GhostAppLauncher(QtWidgets.QWidget):
             self.__clicked_signal.emit(self)
 
     def __str__(self) -> str:
-        # String for print() fn
         return '<GhostAppLauncher: Boo>'
 
 
@@ -875,7 +872,6 @@ class CategoryButton(QtWidgets.QWidget):
             event.ignore()
 
     def __str__(self) -> str:
-        # String for print() fn
         return f'<CategoryButton: {self.__text}>'
 
 
@@ -1025,7 +1021,6 @@ class EnergyButton(QtWidgets.QWidget):
         event.ignore()
 
     def __str__(self) -> str:
-        # String for print() fn
         return f'<EnergyButton: {self.__icon_name}>'
 
 
@@ -1213,7 +1208,6 @@ class AppGrid(QtWidgets.QScrollArea):
         self.leave_event_signal().emit(widget)
 
     def __str__(self) -> str:
-        # String for print() fn
         return f'<AppGrid: {id(self)}>'
 
 
@@ -1251,10 +1245,10 @@ class SearchApps(QtWidgets.QLineEdit):
         """
         if (event.button() == QtCore.Qt.LeftButton
                 or event.button() == QtCore.Qt.RightButton):
-            print(self)
+            # print(self)
+            pass
 
     def __str__(self) -> str:
-        # String for print() fn
         return f'<SearchApps: {id(self)}>'
 
 
@@ -1279,7 +1273,6 @@ class ElidedLabel(QtWidgets.QLabel):
         event.ignore()
 
     def __str__(self) -> str:
-        # String for print() fn
         return f'<ElidedLabel: {id(self)}>'
 
 
@@ -1428,5 +1421,4 @@ class ActionButton(QtWidgets.QWidget):
         event.ignore()
 
     def __str__(self) -> str:
-        # String for print() fn
         return f'<ActionButton: {self.__icon_name}>'
