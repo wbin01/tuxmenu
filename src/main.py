@@ -624,9 +624,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
             # Exec
             exe = widget.desktop_file().content['[Desktop Entry]']['Exec']
-            exec_command = exe.split(' %', 1)[0] if ' %' in exe else exe
+            if '/snap/bin/' in exe:
+                exec_command = exe.strip()
+            elif '/usr/bin/flatpak' in exe:
+                exec_command = exe.replace('/usr/bin/', '').strip()
+            else:
+                exec_command = exe.strip().split()[0]
             subprocess.Popen(exec_command.strip().strip('"').strip().split())
-            print(widget)
 
         # Ghost AppLauncher
         elif isinstance(widget, widgets.GhostAppLauncher):
@@ -809,7 +813,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Add status bar information about the app
 
         # Language code
-        local, escope = (locale.getdefaultlocale()[0], '[Desktop Entry]')
+        local, escope = (locale.getlocale()[0], '[Desktop Entry]')
 
         # Name
         name = widget.desktop_file().content[escope]['Name']
