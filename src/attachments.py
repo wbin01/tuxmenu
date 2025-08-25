@@ -249,7 +249,8 @@ class MenuSchema(object):
             'Home': [], 'All': [], 'Development': [], 'Education': [],
             'Multimedia': [], 'AudioVideo': [], 'Audio': [], 'Video': [],
             'Game': [], 'Graphics': [], 'Network': [], 'Office': [],
-            'Settings': [], 'System': [], 'Utility': [], 'Others': []}
+            'Settings': [], 'System': [], 'Utility': [], 'Others': [],
+            'AppImage': [], 'Snap': [], 'Flatpak': []}
         self.__icons_schema = {
             'Home': 'applications-all', 'All': 'applications-all',
             'Development': 'applications-development',
@@ -260,7 +261,10 @@ class MenuSchema(object):
             'Graphics': 'applications-graphics',
             'Network': 'applications-network', 'Office': 'applications-office',
             'Settings': 'preferences', 'System': 'applications-system',
-            'Utility': 'applications-utilities', 'Others': 'applications-other'
+            'Utility': 'applications-utilities', 'Others':'applications-other',
+            'AppImage': 'application-vnd.appimage.svg',
+            'Snap': 'application-vnd.snap',
+            'Flatpak': 'application-vnd.flatpak.ref.svg'
         }
         self.update_schema()
 
@@ -340,6 +344,15 @@ class MenuSchema(object):
                                 self.__schema[categ].append(desktop_file)
                         else:
                             self.__schema[categ].append(desktop_file)
+
+                if '/snap/bin/' in desktop_entry['Exec']:
+                    self.__schema['Snap'].append(desktop_file)
+                elif '/usr/bin/flatpak' in desktop_entry['Exec']:
+                    self.__schema['Flatpak'].append(desktop_file)
+                # APPIMAGE_EXTRACT_AND_RUN=1 /opt/Telegram/Telegram
+                elif ('AppImage' in desktop_entry['Exec'] or
+                        'Telegram' in desktop_entry['Exec']):
+                    self.__schema['AppImage'].append(desktop_file)
 
     def __str__(self) -> str:
         return f'<MenuSchema: {id(self)}>'

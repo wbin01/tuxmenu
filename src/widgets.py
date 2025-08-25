@@ -601,8 +601,11 @@ class AppLauncher(QtWidgets.QWidget):
             img_path = os.path.join(
                 os.path.abspath(os.path.dirname(__file__)),
                 'static/flatpak.svg')
-        elif 'AppImage' in self.__desktop_file.content[
-                '[Desktop Entry]']['Exec']:
+        elif (  # APPIMAGE_EXTRACT_AND_RUN=1 /opt/Telegram/Telegram
+                'AppImage' in self.__desktop_file.content[
+                    '[Desktop Entry]']['Exec'] or
+                'Telegram' in self.__desktop_file.content[
+                    '[Desktop Entry]']['Exec']):
             img_path = os.path.join(
                 os.path.abspath(os.path.dirname(__file__)),
                 'static/appimage.svg')
