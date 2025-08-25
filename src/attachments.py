@@ -371,22 +371,44 @@ class EnergyButtonsSchema(object):
                 'icon-name': 'system-lock-screen',  # loginctl unlock-session
                 'command': ['loginctl', 'lock-session']},
             'suspend': {
+                # qdbus6 org.kde.Shutdown /Shutdown suspend
                 'text': 'Suspend',
                 'icon-name': 'system-suspend',
                 'command': ['systemctl', 'suspend']},  # systemctl hibernate
             'reboot': {
+                # qdbus6 org.kde.Shutdown /Shutdown reboot
                 'text': 'Reboot',
                 'icon-name': 'system-reboot',
                 'command': ['systemctl', 'reboot']},
             'shutdown': {
+                # qdbus6 org.kde.Shutdown /Shutdown powerOff
                 'text': 'Shutdown',
                 'icon-name': 'system-shutdown',
                 'command': ['systemctl', 'poweroff']},
             'log-out': {
+                # loginctl terminate-user $USER
+                # loginctl terminate-session $XDG_SESSION_ID
+                
+                # qdbus org.kde.Shutdown /Shutdown logout
+                # qdbus6 org.kde.Shutdown /Shutdown logout
+                # gnome-session-quit --logout --no-prompt
+                # xfce4-session-logout --logout
+                # lxqt-leave --logout
                 'text': 'Log-out',
                 'icon-name': 'system-log-out',
-                'command': None},
+                'command': [
+                    'qdbus', 'org.kde.Shutdown', '/Shutdown', 'logout']},
             'switch-user': {
+                # loginctl switch-user <user>
+                # qdbus org.kde.SDDM /org/kde/SDDM/Greeter callLogin
+
+                # qdbus org.kde.ksmserver /KSMServer logout -1 -1 2
+                # qdbus6 org.kde.Shutdown /Shutdown switchUser
+
+                # qdbus6 org.kde.SDDM /org/kde/SDDM DisplaySwitchUser
+                # qdbus6 org.freedesktop.DBus / org.freedesktop.DBus.StartServiceByName org.kde.sddm 0
+                # qdbus6 org.freedesktop.DBus / org.freedesktop.DBus.StartServiceByName org.kde.sddm 0
+                # dm-tool switch-to-greeter
                 'text': 'Switch user',
                 'icon-name': 'system-switch-user',
                 'command': None}}

@@ -332,6 +332,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.__energy_buttons_schema = attachments.EnergyButtonsSchema()
         for name_id, values in self.__energy_buttons_schema.schema.items():
+            if name_id == 'switch-user':
+                continue
             energy_button = widgets.EnergyButton(
                 icon_name=values['icon-name'],
                 text=values['text'],
